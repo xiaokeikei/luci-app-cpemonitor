@@ -1,0 +1,123 @@
+#!/bin/sh
+. /lib/functions.sh
+
+RAM_DIR=/tmp/cpemonitor
+mkdir -p "$RAM_DIR"
+
+load_config() {
+	config_load cpemonitor
+	config_get IFACE main interface wwan0
+	config_get SAMPLE main sample_interval 10
+	config_get MODEM_SAMPLE main modem_interval 60
+	config_get PERSIST main persist_interval 21600
+	config_get RETENTION main retention_days 365
+	config_get DATA_DIR main data_dir /overlay/cpemonitor
+	config_get ALI_HOST main aliyun_host 223.5.5.5
+	config_get TEN_HOST main tencent_host 119.29.29.29
+	config_get PING_COUNT main ping_count 1
+	config_get PING_TIMEOUT main ping_timeout 2
+	[ "$SAMPLE" -ge 2 ] 2>/dev/null || SAMPLE=10
+	[ "$MODEM_SAMPLE" -ge "$SAMPLE" ] 2>/dev/null || MODEM_SAMPLE=$SAMPLE
+	[ "$PERSIST" -ge 60 ] 2>/dev/null || PERSIST=21600
+}
+
+num() { echo "$1" | grep -Eo -- '-?[0-9]+([.][0-9]+)?' | head -1; }
+read_counter() { cat "/sys/class/net/$IFACE/statistics/$1" 2>/dev/null || echo 0; }
+
+ping_host() {
+	local out
+	out="$(ping -c "$PING_COUNT" -W "$PING_TIMEOUT" "$1" 2>/dev/null)"
+	PING_MS="$(echo "$out" | sed -n 's/.*time=\([0-9.]*\).*/\1/p' | head -1)"
+	[ -n "$PING_MS" ] || PING_MS=-1
+	PING_LOSS="$(echo "$out" | sed -n 's/.* \([0-9]*\)% packet loss.*/\1/p' | head -1)"
+	[ -n "$PING_LOSS" ] || PING_LOSS=100
+}
+
+read_cpu() {
+	set -- $(head -1 /proc/stat)
+	local user=$2 nice=$3 sys=$4 idle=$5 iowait=$6 irq=$7 soft=$8 steal=$9
+	CPU_IDLE=$((idle + iowait)); CPU_TOTAL=$((user + nice + sys + idle + iowait + irq + soft + steal))
+	if [ -n "$LAST_CPU_TOTAL" ] && [ "$CPU_TOTAL" -gt "$LAST_CPU_TOTAL" ]; then
+		CPU_PCT=$((100 * ((CPU_TOTAL - LAST_CPU_TOTAL) - (CPU_IDLE - LAST_CPU_IDLE)) / (CPU_TOTAL - LAST_CPU_TOTAL)))
+	else CPU_PCT=0; fi
+	LAST_CPU_TOTAL=$CPU_TOTAL; LAST_CPU_IDLE=$CPU_IDLE
+}
+
+read_memory() {
+	local total avail
+	total=$(awk '/^MemTotal:/{print $2}' /proc/meminfo)
+	avail=$(awk '/^MemAvailable:/{print $2}' /proc/meminfo)
+	[ "$total" -gt 0 ] && MEM_PCT=$((100 * (total - avail) / total)) || MEM_PCT=0
+}
+
+read_temps() {
+	local t
+	t="$(/sbin/tempinfo 2>/dev/null)"
+	CPU_TEMP="$(echo "$t" | sed -n 's/.*CPU: *\([0-9.]*\).*/\1/p')"
+	WIFI_TEMP="$(echo "$t" | sed -n 's/.*WiFi: *\([0-9.]*\).*/\1/p')"
+	[ -n "$CPU_TEMP" ] || CPU_TEMP=-1
+	[ -n "$WIFI_TEMP" ] || WIFI_TEMP=-1
+}
+
+read_modem() {
+	local j
+	j="$(ubus call modem_ctrl info 2>/dev/null)"
+	MODEM_TEMP="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="temperature"].value' 2>/dev/null | head -1)"
+	RSRP="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="RSRP"].value' 2>/dev/null | head -1)"
+	RSRQ="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="RSRQ"].value' 2>/dev/null | head -1)"
+	SINR="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="SINR"].value' 2>/dev/null | head -1)"
+	MODEM_TEMP="$(num "$MODEM_TEMP")"; RSRP="$(num "$RSRP")"; RSRQ="$(num "$RSRQ")"; SINR="$(num "$SINR")"
+	[ -n "$MODEM_TEMP" ] || MODEM_TEMP=-1; [ -n "$RSRP" ] || RSRP=-999
+	[ -n "$RSRQ" ] || RSRQ=-999; [ -n "$SINR" ] || SINR=-999
+}
+
+checkpoint() {
+	mkdir -p "$DATA_DIR/samples"
+	for f in "$RAM_DIR"/samples-*.csv; do
+		[ -f "$f" ] || continue
+		base="$(basename "$f")"
+		[ -f "$DATA_DIR/samples/$base" ] || echo 'timestamp,down_bps,up_bps,cpu_pct,mem_pct,cpu_temp,wifi_temp,modem_temp,ping_aliyun_ms,loss_aliyun_pct,ping_tencent_ms,loss_tencent_pct,load1,disk_pct,rsrp,rsrq,sinr' > "$DATA_DIR/samples/$base"
+		cat "$f" >> "$DATA_DIR/samples/$base" && : > "$f"
+	done
+	[ -f "$RAM_DIR/daily.csv" ] && { [ -f "$DATA_DIR/daily.csv" ] || echo 'date,download_bytes,upload_bytes,total_bytes' > "$DATA_DIR/daily.csv"; cat "$RAM_DIR/daily.csv" >> "$DATA_DIR/daily.csv" && : > "$RAM_DIR/daily.csv"; }
+	echo "$DAY $DAY_RX $DAY_TX $PREV_RX $PREV_TX" > "$DATA_DIR/state"
+	sync
+	find "$DATA_DIR/samples" -type f -mtime "+$RETENTION" -delete 2>/dev/null
+	LAST_PERSIST=$(date +%s)
+}
+
+load_config; mkdir -p "$DATA_DIR"
+NOW=$(date +%s); LAST_PERSIST=$NOW; LAST_MODEM=0
+RX=$(read_counter rx_bytes); TX=$(read_counter tx_bytes); PREV_RX=$RX; PREV_TX=$TX
+DAY=$(date +%F); DAY_RX=0; DAY_TX=0
+if [ -f "$DATA_DIR/state" ]; then
+	read OLD_DAY OLD_RX OLD_TX OLD_PREV_RX OLD_PREV_TX < "$DATA_DIR/state"
+	if [ "$OLD_DAY" = "$DAY" ]; then DAY_RX=$OLD_RX; DAY_TX=$OLD_TX; fi
+fi
+read_cpu; read_modem
+
+trap 'checkpoint; exit 0' TERM INT
+while :; do
+	START=$(date +%s); CUR_DAY=$(date +%F)
+	RX=$(read_counter rx_bytes); TX=$(read_counter tx_bytes)
+	DRX=$((RX >= PREV_RX ? RX - PREV_RX : 0)); DTX=$((TX >= PREV_TX ? TX - PREV_TX : 0))
+	PREV_RX=$RX; PREV_TX=$TX
+	if [ "$CUR_DAY" != "$DAY" ]; then
+		echo "$DAY,$DAY_RX,$DAY_TX,$((DAY_RX + DAY_TX))" >> "$RAM_DIR/daily.csv"
+		DAY=$CUR_DAY; DAY_RX=0; DAY_TX=0
+	fi
+	DAY_RX=$((DAY_RX + DRX)); DAY_TX=$((DAY_TX + DTX))
+	DOWN_BPS=$((DRX * 8 / SAMPLE)); UP_BPS=$((DTX * 8 / SAMPLE))
+	read_cpu; read_memory; read_temps
+	ping_host "$ALI_HOST"; ALI_MS=$PING_MS; ALI_LOSS=$PING_LOSS
+	ping_host "$TEN_HOST"; TEN_MS=$PING_MS; TEN_LOSS=$PING_LOSS
+	if [ $((START - LAST_MODEM)) -ge "$MODEM_SAMPLE" ]; then read_modem; LAST_MODEM=$START; fi
+	LOAD1=$(awk '{print $1}' /proc/loadavg)
+	DISK_PCT=$(df -P "$DATA_DIR" | awk 'NR==2{gsub(/%/,"",$5);print $5}')
+	echo "$START,$DOWN_BPS,$UP_BPS,$CPU_PCT,$MEM_PCT,$CPU_TEMP,$WIFI_TEMP,$MODEM_TEMP,$ALI_MS,$ALI_LOSS,$TEN_MS,$TEN_LOSS,$LOAD1,$DISK_PCT,$RSRP,$RSRQ,$SINR" >> "$RAM_DIR/samples-$DAY.csv"
+	echo "$START $DAY_RX $DAY_TX $DOWN_BPS $UP_BPS $CPU_PCT $MEM_PCT $CPU_TEMP $WIFI_TEMP $MODEM_TEMP $ALI_MS $TEN_MS $LOAD1 $DISK_PCT $RSRP $RSRQ $SINR" > "$RAM_DIR/current"
+	[ $((START - LAST_PERSIST)) -ge "$PERSIST" ] && checkpoint
+	ELAPSED=$(($(date +%s) - START)); SLEEP=$((SAMPLE - ELAPSED)); [ "$SLEEP" -gt 0 ] || SLEEP=1
+	sleep "$SLEEP"
+done
+

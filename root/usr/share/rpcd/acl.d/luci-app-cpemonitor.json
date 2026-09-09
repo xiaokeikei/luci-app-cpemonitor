@@ -1,0 +1,7 @@
+{
+	"luci-app-cpemonitor": {
+		"description": "访问 CPE 监控数据和设置",
+		"read": { "ubus": { "cpemonitor": [ "current", "history", "daily" ] }, "uci": [ "cpemonitor" ] },
+		"write": { "uci": [ "cpemonitor" ] }
+	}
+}

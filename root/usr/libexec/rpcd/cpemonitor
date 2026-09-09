@@ -1,0 +1,50 @@
+#!/bin/sh
+. /usr/share/libubox/jshn.sh
+
+current() {
+	set -- $(cat /tmp/cpemonitor/current 2>/dev/null)
+	json_init
+	json_add_int timestamp "${1:-0}"; json_add_int day_download "${2:-0}"; json_add_int day_upload "${3:-0}"
+	json_add_int down_bps "${4:-0}"; json_add_int up_bps "${5:-0}"; json_add_int cpu_pct "${6:-0}"; json_add_int mem_pct "${7:-0}"
+	json_add_double cpu_temp "${8:--1}"; json_add_double wifi_temp "${9:--1}"; shift 9
+	json_add_double modem_temp "${1:--1}"; json_add_double aliyun_ms "${2:--1}"; json_add_double tencent_ms "${3:--1}"
+	json_add_double load1 "${4:-0}"; json_add_int disk_pct "${5:-0}"; json_add_double rsrp "${6:--999}"; json_add_double rsrq "${7:--999}"; json_add_double sinr "${8:--999}"
+	json_dump
+}
+
+history() {
+	json_load "$(cat)" 2>/dev/null
+	json_get_var start start; json_get_var end end; json_get_var limit limit
+	now=$(date +%s); [ "$end" -gt 0 ] 2>/dev/null || end=$now
+	[ "$start" -gt 0 ] 2>/dev/null || start=$((end - 600))
+	[ "$start" -le "$end" ] || { t=$start; start=$end; end=$t; }
+	[ "$limit" -ge 10 ] 2>/dev/null || limit=1200; [ "$limit" -le 5000 ] || limit=5000
+	data_dir=$(uci -q get cpemonitor.main.data_dir); [ -n "$data_dir" ] || data_dir=/overlay/cpemonitor
+	tmp=/tmp/cpemonitor/rpc-history.$$; raw=$tmp.raw; : > "$raw"
+	day_epoch=$((start - start % 86400 - 86400))
+	while [ "$day_epoch" -le $((end + 86400)) ]; do
+		day=$(date -d "@$day_epoch" +%F 2>/dev/null)
+		[ -n "$day" ] && { cat "$data_dir/samples/samples-$day.csv" 2>/dev/null; cat "/tmp/cpemonitor/samples-$day.csv" 2>/dev/null; } >> "$raw"
+		day_epoch=$((day_epoch + 86400))
+	done
+	awk -F, -v s="$start" -v e="$end" '$1 ~ /^[0-9]+$/ && $1 >= s && $1 <= e' "$raw" > "$tmp"
+	count=$(wc -l < "$tmp"); step=$(((count + limit - 1) / limit)); [ "$step" -ge 1 ] || step=1
+	printf '{"rows":['; first=1
+	awk -v step="$step" 'NR == 1 || NR % step == 0 { print }' "$tmp" | while IFS= read -r line; do [ -n "$line" ] || continue; [ "$first" = 1 ] || printf ','; first=0; printf '[%s]' "$line"; done
+	printf ']}'
+	rm -f "$tmp" "$raw"
+}
+
+daily() {
+	data_dir=$(uci -q get cpemonitor.main.data_dir); [ -n "$data_dir" ] || data_dir=/overlay/cpemonitor
+	printf '{"rows":['; first=1
+	{ tail -n 366 "$data_dir/daily.csv" 2>/dev/null; } | grep -v '^date' | while IFS=, read -r d rx tx total; do
+		[ -n "$d" ] || continue; [ "$first" = 1 ] || printf ','; first=0; printf '["%s",%s,%s,%s]' "$d" "$rx" "$tx" "$total"
+	done
+	printf ']}'
+}
+
+case "$1" in
+	list) echo '{"current":{},"history":{"start":"Integer","end":"Integer","limit":"Integer"},"daily":{}}' ;;
+	call) case "$2" in current) current;; history) history;; daily) daily;; esac ;;
+esac

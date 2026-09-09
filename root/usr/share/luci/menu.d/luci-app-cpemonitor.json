@@ -1,0 +1,9 @@
+{
+	"admin/status/cpemonitor": {
+		"title": "CPE 监控",
+		"order": 35,
+		"action": { "type": "view", "path": "cpemonitor/overview" },
+		"depends": { "acl": [ "luci-app-cpemonitor" ] }
+	}
+}
+

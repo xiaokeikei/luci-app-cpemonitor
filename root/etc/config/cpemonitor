@@ -1,0 +1,13 @@
+config cpemonitor 'main'
+	option enabled '1'
+	option interface 'wwan0'
+	option sample_interval '10'
+	option modem_interval '60'
+	option persist_interval '21600'
+	option retention_days '365'
+	option data_dir '/overlay/cpemonitor'
+	option aliyun_host '223.5.5.5'
+	option tencent_host '119.29.29.29'
+	option ping_count '1'
+	option ping_timeout '2'
+

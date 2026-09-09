@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0 - 2026-09-09
+
+- Replace the free-form WAN device field with a dynamically populated device selector.
+- Filter loopback, LAN bridge, hardware-NAT and access-point-only devices.
+
 ## 1.2.0 - 2026-09-09
 
 - Add selectable Kbps, Mbps, KB/s and MB/s units to the rolling speed chart.

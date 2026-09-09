@@ -4,7 +4,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-cpemonitor
-PKG_VERSION:=1.0.0
+PKG_VERSION:=1.1.0
 PKG_RELEASE:=1
 PKG_MAINTAINER:=xiaokeikei
 PKG_LICENSE:=GPL-2.0-only
@@ -73,4 +73,3 @@ exit 0
 endef
 
 $(eval $(call BuildPackage,luci-app-cpemonitor))
-

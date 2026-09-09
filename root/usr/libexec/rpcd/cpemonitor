@@ -9,6 +9,7 @@ current() {
 	json_add_double cpu_temp "${8:--1}"; json_add_double wifi_temp "${9:--1}"; shift 9
 	json_add_double modem_temp "${1:--1}"; json_add_double aliyun_ms "${2:--1}"; json_add_double tencent_ms "${3:--1}"
 	json_add_double load1 "${4:-0}"; json_add_int disk_pct "${5:-0}"; json_add_double rsrp "${6:--999}"; json_add_double rsrq "${7:--999}"; json_add_double sinr "${8:--999}"
+	json_add_int fan_pct "${9:-0}"
 	json_dump
 }
 

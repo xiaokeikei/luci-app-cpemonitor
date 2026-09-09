@@ -21,9 +21,9 @@ function draw(canvas, rows, series) {
 	canvas.width = w*dpr; canvas.height = h*dpr; var c=canvas.getContext('2d'); c.scale(dpr,dpr); c.clearRect(0,0,w,h);
 	c.save(); c.strokeStyle='rgba(160,160,160,.38)'; c.lineWidth=1; c.setLineDash([5,5]); for(var y=20;y<h;y+=55){c.beginPath();c.moveTo(42,y);c.lineTo(w-8,y);c.stroke();} c.restore();
 	if(!rows.length) return;
-	var vals=[]; series.forEach(function(s){ rows.forEach(function(r){ var v=Number(r[s.i]); if(v>=s.min) vals.push(v); }); });
+	var vals=[]; series.forEach(function(s){ rows.forEach(function(r){ var v=Number(r[s.i]); if(isFinite(v)&&v>=s.min) vals.push(v); }); });
 	var max=Math.max.apply(null,vals.concat([1])), min=Math.min.apply(null,vals.concat([0])); if(max===min) max=min+1;
-	series.forEach(function(s){c.setLineDash([]);c.strokeStyle=s.color;c.lineWidth=2;c.beginPath();var started=false;rows.forEach(function(r,i){var v=Number(r[s.i]);if(v<s.min)return;var x=42+i*(w-52)/Math.max(1,rows.length-1),y=20+(max-v)*(h-40)/(max-min);if(!started){c.moveTo(x,y);started=true}else c.lineTo(x,y)});c.stroke();});
+	series.forEach(function(s){c.setLineDash([]);c.strokeStyle=s.color;c.lineWidth=2;c.beginPath();var started=false;rows.forEach(function(r,i){var v=Number(r[s.i]);if(!isFinite(v)||v<s.min)return;var x=42+i*(w-52)/Math.max(1,rows.length-1),y=20+(max-v)*(h-40)/(max-min);if(!started){c.moveTo(x,y);started=true}else c.lineTo(x,y)});c.stroke();});
 	c.fillStyle='#666';c.font='11px sans-serif';c.fillText(max.toFixed(1),2,24);c.fillText(min.toFixed(1),2,h-18);
 }
 function tooltip(canvas,getRows,series) {
@@ -39,7 +39,7 @@ return view.extend({
 		var daily=Array.isArray(data[2]) ? data[2] : (data[2].rows||[]);
 		var speed=E('canvas',{style:'width:100%;height:260px'}), system=E('canvas',{style:'width:100%;height:260px'}), latency=E('canvas',{style:'width:100%;height:260px'}), signal=E('canvas',{style:'width:100%;height:260px'});
 		var cards=E('div',{style:'display:flex;flex-wrap:wrap'},[
-			card('cm-down','当前下载'),card('cm-up','当前上传'),card('cm-day','今日总流量'),card('cm-cpu','CPU / 内存'),card('cm-temp','CPU / 模组温度'),card('cm-ping','阿里 / 腾讯延迟')]);
+			card('cm-down','当前下载'),card('cm-up','当前上传'),card('cm-day','今日总流量'),card('cm-cpu','CPU / 内存'),card('cm-temp','CPU / 模组温度'),card('cm-fan','风扇转速'),card('cm-ping','阿里 / 腾讯延迟')]);
 		var root=E('div',{},[E('h2',{},'CPE 监控 · 最近 10 分钟'),cards,
 			E('div',{class:'cbi-section'},[E('h3',{},'实时速率（下载蓝 / 上传橙）'),speed]),
 			E('div',{class:'cbi-section'},[E('h3',{},'系统使用率（CPU 红 / 内存紫）'),system]),
@@ -52,7 +52,7 @@ return view.extend({
 		tooltip(signal,function(){return hist},[{i:14,name:'RSRP',color:'#e53935',min:-200,fmt:function(v){return v+' dBm';}},{i:15,name:'RSRQ',color:'#fb8c00',min:-200,fmt:function(v){return v+' dB';}},{i:16,name:'SINR',color:'#43a047',min:-200,fmt:function(v){return v+' dB';}}]);
 		function charts(){draw(speed,hist,[{i:1,color:'#1e88e5',min:0},{i:2,color:'#fb8c00',min:0}]);draw(system,hist,[{i:3,color:'#e53935',min:0},{i:4,color:'#8e24aa',min:0}]);draw(latency,hist,[{i:8,color:'#43a047',min:0},{i:10,color:'#1e88e5',min:0}]);draw(signal,hist,[{i:14,color:'#e53935',min:-200},{i:15,color:'#fb8c00',min:-200},{i:16,color:'#43a047',min:-200}]);}
 		window.setTimeout(charts,0); window.addEventListener('resize',charts);
-		poll.add(function(){var now=Math.floor(Date.now()/1000);return Promise.all([callCurrent(),callHistory(now-600,now,1200)]).then(function(r){var x=r[0];hist=Array.isArray(r[1]) ? r[1] : (r[1].rows||[]);document.getElementById('cm-down').textContent=rate(x.down_bps);document.getElementById('cm-up').textContent=rate(x.up_bps);document.getElementById('cm-day').textContent=bytes(Number(x.day_download)+Number(x.day_upload));document.getElementById('cm-cpu').textContent=x.cpu_pct+'% / '+x.mem_pct+'%';document.getElementById('cm-temp').textContent=x.cpu_temp+'°C / '+x.modem_temp+'°C';document.getElementById('cm-ping').textContent=x.aliyun_ms+' / '+x.tencent_ms+' ms';charts();});},10);
+		poll.add(function(){var now=Math.floor(Date.now()/1000);return Promise.all([callCurrent(),callHistory(now-600,now,1200)]).then(function(r){var x=r[0];hist=Array.isArray(r[1]) ? r[1] : (r[1].rows||[]);document.getElementById('cm-down').textContent=rate(x.down_bps);document.getElementById('cm-up').textContent=rate(x.up_bps);document.getElementById('cm-day').textContent=bytes(Number(x.day_download)+Number(x.day_upload));document.getElementById('cm-cpu').textContent=x.cpu_pct+'% / '+x.mem_pct+'%';document.getElementById('cm-temp').textContent=x.cpu_temp+'°C / '+x.modem_temp+'°C';document.getElementById('cm-fan').textContent=(x.fan_pct == null ? '--' : x.fan_pct+'%');document.getElementById('cm-ping').textContent=x.aliyun_ms+' / '+x.tencent_ms+' ms';charts();});},10);
 		return root;
 	},
 	handleSaveApply: null, handleSave: null, handleReset: null

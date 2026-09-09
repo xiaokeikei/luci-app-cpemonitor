@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 - 2026-09-09
+
+- Add fan PWM speed percentage to live status and historical charts.
+- Detect the PWM path and maximum value from the existing fancontrol configuration.
+
 ## 1.0.0 - 2026-09-09
 
 - Initial release.
@@ -11,4 +16,3 @@
 - Mouse hover values on all charts.
 - Configurable collection, modem polling, persistence and retention intervals.
 - RAM buffering with six-hour persistent checkpoints by default.
-

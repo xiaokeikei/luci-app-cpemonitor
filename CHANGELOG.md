@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 - 2026-09-09
+
+- Add selectable Kbps, Mbps, KB/s and MB/s units to the rolling speed chart.
+- Add a persistent default speed-unit setting.
+- Add the temperature and fan chart to the ten-minute live dashboard.
+
 ## 1.1.0 - 2026-09-09
 
 - Add fan PWM speed percentage to live status and historical charts.

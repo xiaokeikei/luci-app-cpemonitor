@@ -17,7 +17,7 @@ return view.extend({
 		opt(form.Value,'aliyun_host','阿里云探测地址','223.5.5.5'); opt(form.Value,'tencent_host','腾讯云探测地址','119.29.29.29');
 		o=opt(form.Value,'ping_count','每次 Ping 包数','1');o.datatype='range(1,5)';
 		o=opt(form.Value,'ping_timeout','Ping 超时（秒）','2');o.datatype='range(1,10)';
+		o=opt(form.ListValue,'speed_unit','实时速率显示单位','Mbps');o.value('Kbps','Kbps');o.value('Mbps','Mbps');o.value('KB/s','KB/s');o.value('MB/s','MB/s');
 		return m.render();
 	}
 });
-

@@ -10,4 +10,4 @@ config cpemonitor 'main'
 	option tencent_host '119.29.29.29'
 	option ping_count '1'
 	option ping_timeout '2'
-
+	option speed_unit 'Mbps'

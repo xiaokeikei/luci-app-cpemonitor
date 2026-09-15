@@ -1,4 +1,4 @@
-# CPE Monitor for ImmortalWrt
+# CPE Monitor for ImmortalWrt — CPE 网络监控插件
 
 面向 Hiveton H5000M / ImmortalWrt 24.10 的轻量监控插件。
 

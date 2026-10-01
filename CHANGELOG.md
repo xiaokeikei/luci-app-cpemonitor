@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1 - 2026-10-01
+
+- Fix missing monthly quota settings by using one UCI named section with separate collection and quota tabs.
+- Update settings instructions and add the verified settings screenshot.
+
 ## 1.5.0 - 2026-10-01
 
 - Add a current-status navigation tab and label daily traffic columns as date, upload, download and total.

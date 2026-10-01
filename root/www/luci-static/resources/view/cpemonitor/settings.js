@@ -10,8 +10,9 @@ return view.extend({
 	render: function(data) {
 		var devices=data[1]||[];
 		var m=new form.Map('cpemonitor','CPE 监控设置','保存并应用后，采集服务会自动重启。');
-		var s=m.section(form.NamedSection,'main','cpemonitor','采集设置'); s.anonymous=true;
-		function opt(type,name,title,def){var o=s.option(type,name,title);o.default=def;return o;}
+		var s=m.section(form.NamedSection,'main','cpemonitor','监控设置'); s.anonymous=true;
+		s.tab('collection','采集设置');s.tab('quota','月流量与额度控制');
+		function opt(type,name,title,def){var o=s.taboption('collection',type,name,title);o.default=def;return o;}
 		opt(form.Flag,'enabled','启用','1');
 		var iface=opt(form.ListValue,'interface','WAN 设备','wwan0');
 		devices.map(function(d){return d.getName();}).filter(function(n){return n&&n!=='lo'&&n!=='br-lan'&&n!=='hnat'&&!/^ra(i)?[0-9]+$/.test(n)&&!/^apcli/.test(n);}).sort().forEach(function(n){var d=devices.filter(function(x){return x.getName()===n;})[0],label=n,type=d&&d.getType?d.getType():'';iface.value(n,type?n+' ('+type+')':n);});
@@ -25,7 +26,7 @@ return view.extend({
 		o=opt(form.Value,'ping_count','每次 Ping 包数','1');o.datatype='range(1,5)';
 		o=opt(form.Value,'ping_timeout','Ping 超时（秒）','2');o.datatype='range(1,10)';
 		o=opt(form.ListValue,'speed_unit','实时速率显示单位','Mbps');o.value('Kbps','Kbps');o.value('Mbps','Mbps');o.value('KB/s','KB/s');o.value('MB/s','MB/s');
-		var q=m.section(form.NamedSection,'main','cpemonitor','月流量与额度控制');q.anonymous=true;
+		var q={option:function(type,name,title){return s.taboption('quota',type,name,title);}};
 		var acknowledged=uci.get('cpemonitor','main','quota_enabled')==='1';
 		var enabled=q.option(form.Flag,'quota_enabled','开启月度额度限制');enabled.default='0';enabled.rmempty=false;
 		enabled.description='按下载＋上传合计计量；达到阈值限速，100% 暂停 WAN 联网，局域网管理仍可访问。';

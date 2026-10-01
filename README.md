@@ -2,11 +2,13 @@
 
 面向 Hiveton H5000M / ImmortalWrt 24.10 的轻量监控插件。
 
-当前版本：**v1.5.0**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
+当前版本：**v1.5.1**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
 
 ## 界面预览
 
 ![CPE 监控 v1.5.0：现在状态、时间范围筛选和月流量额度控制](docs/images/cpemonitor-v1.5.0.png)
+
+![CPE 监控 v1.5.1 设置：采集设置和月流量与额度控制选项卡](docs/images/cpemonitor-v1.5.1.png)
 
 ## 指标
 
@@ -24,10 +26,10 @@
 推荐下载 Release 中的 IPK 安装或升级：
 
 ```sh
-opkg install ./luci-app-cpemonitor_1.5.0-1_all.ipk
+opkg install ./luci-app-cpemonitor_1.5.1-1_all.ipk
 ```
 
-也可使用自解压安装包，执行 `sh luci-app-cpemonitor-1.5.0-1.run`（需预先安装依赖）。
+也可使用自解压安装包，执行 `sh luci-app-cpemonitor-1.5.1-1.run`（需预先安装依赖）。
 升级后若页面仍显示旧版，请按 **Ctrl+F5** 强制刷新浏览器缓存。
 
 上传并解压后，在插件目录执行：
@@ -59,6 +61,8 @@ LuCI 菜单：`状态 → CPE 监控`。
 在源码目录运行 `python tools/build_release.py`（Python 3），产物输出到上一级的对应 `versions/` 目录，包括 IPK、自解压安装包、源码 ZIP 和 SHA256 校验文件。
 
 ## 月流量与额度控制（v1.5.0）
+
+入口：页面顶部“设置” → “月流量与额度控制”选项卡。勾选“开启月度额度限制”，确认偏差提示后填写额度、阈值和速率，最后“保存并应用”。v1.5.1 修复了该设置区未显示的问题。
 
 - 展示本期下载、上传、合计、额度、剩余和使用百分比；沿用实际采集的每日累计，未采集的历史流量不能补算。
 - 设置页可填写整数 GB 额度、限速阈值（1–99%）、下载/上传 Mbps，以及每月账单日（1–28，默认 1 日）。1 GB = 1,000,000,000 字节。

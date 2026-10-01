@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0 - 2026-10-01
+
+- Record serving bands and network modes through generic modem_ctrl/QModem data interfaces without a model/band allowlist.
+- Preserve reported serving/secondary carriers, distinguish NR/LTE/WCDMA and explicitly mark unknown readings.
+- Add a current-band card, per-modem frequency timeline and observed band/mode changes in dashboard and history queries.
+- Buffer radio snapshots in RAM and persist with existing checkpoints; historical numeric CSV remains compatible.
+- Exclude supported-band lists and neighbours, avoid guessing ambiguous NSA bands and cap radio history responses at 5000 observations.
+
 ## 1.5.1 - 2026-10-01
 
 - Fix missing monthly quota settings by using one UCI named section with separate collection and quota tabs.

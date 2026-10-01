@@ -45,11 +45,30 @@ daily() {
 	printf ']}'
 }
 
+band_history() {
+	json_load "$(cat)"; json_get_var start start; json_get_var end end; json_get_var limit limit
+	[ "$end" -gt 0 ] 2>/dev/null || end=$(date +%s)
+	[ "$start" -gt 0 ] 2>/dev/null || start=$((end - 600))
+	[ "$start" -le "$end" ] || { t=$start; start=$end; end=$t; }
+	[ "$limit" -ge 10 ] 2>/dev/null || limit=5000; [ "$limit" -le 5000 ] || limit=5000
+	data_dir=$(uci -q get cpemonitor.main.data_dir); [ -n "$data_dir" ] || data_dir=/overlay/cpemonitor
+	{
+		day_epoch=$((start - start % 86400 - 86400))
+		while [ "$day_epoch" -le $((end + 86400)) ]; do
+			day=$(date -d "@$day_epoch" +%F 2>/dev/null)
+			[ -n "$day" ] && { cat "$data_dir/bands/bands-$day.jsonl" 2>/dev/null; cat "/tmp/cpemonitor/bands-$day.jsonl" 2>/dev/null; }
+			day_epoch=$((day_epoch + 86400))
+		done
+	} | ucode /usr/lib/cpemonitor/bands.uc history "$start" "$end" "$limit"
+}
+
 case "$1" in
-	list) echo '{"current":{},"history":{"start":"Integer","end":"Integer","limit":"Integer"},"daily":{},"monthly":{},"quota_action":{"action":"String"}}' ;;
+	list) echo '{"current":{},"history":{"start":"Integer","end":"Integer","limit":"Integer"},"daily":{},"monthly":{},"radio":{},"band_history":{"start":"Integer","end":"Integer","limit":"Integer"},"quota_action":{"action":"String"}}' ;;
 	call) case "$2" in
 		current) current;; history) history;; daily) daily;;
 		monthly) cat /tmp/cpemonitor/monthly.json 2>/dev/null || echo '{}' ;;
+		radio) cat /tmp/cpemonitor/band-current.json 2>/dev/null || echo '{}' ;;
+		band_history) band_history ;;
 		quota_action)
 			json_load "$(cat)"; json_get_var action action
 			case "$action" in unlock|resume) /usr/sbin/cpemonitor-quota "$action";; *) echo '{"error":"无效操作"}';; esac ;;

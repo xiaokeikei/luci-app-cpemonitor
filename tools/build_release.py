@@ -49,7 +49,7 @@ Section: luci
 Priority: optional
 Maintainer: xiaokeikei
 License: GPL-2.0-only
-Depends: luci-base, rpcd, jsonfilter, tc-tiny, kmod-ifb, kmod-sched-core, nftables-json, busybox
+Depends: luci-base, rpcd, jsonfilter, tc-tiny, kmod-ifb, kmod-sched-core, nftables-json, busybox, ucode, ucode-mod-fs
 """.encode()
 postinst = b'''#!/bin/sh
 [ -n "${IPKG_INSTROOT}" ] || {
@@ -100,8 +100,7 @@ with zipfile.ZipFile(OUT / f"luci-app-cpemonitor-{VERSION}-{RELEASE}-source.zip"
     for p in sorted(sources):
         z.writestr("luci-app-cpemonitor/" + p.relative_to(BASE).as_posix(), source_bytes(p))
 (OUT / f"RELEASE_NOTES-v{VERSION}.md").write_bytes(source_bytes(BASE / f"RELEASE_NOTES-v{VERSION}.md"))
-screenshot = BASE / "docs" / "images" / f"cpemonitor-v{VERSION}.png"
-if screenshot.exists():
+for screenshot in sorted((BASE / "docs" / "images").glob(f"cpemonitor-v{VERSION}*.png")):
     (OUT / screenshot.name).write_bytes(screenshot.read_bytes())
 assets = sorted(p for p in OUT.iterdir() if p.is_file() and p.name != "SHA256SUMS")
 (OUT / "SHA256SUMS").write_text("".join(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in assets), encoding="utf-8")

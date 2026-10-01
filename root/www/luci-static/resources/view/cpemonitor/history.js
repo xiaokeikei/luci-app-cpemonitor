@@ -2,8 +2,10 @@
 'require view';
 'require rpc';
 'require ui';
+'require cpemonitor.bands as bands';
 
 var callHistory = rpc.declare({ object:'cpemonitor', method:'history', params:['start','end','limit'], expect:{ rows:[] } });
+var callBands = rpc.declare({ object:'cpemonitor', method:'band_history', params:['start','end','limit'], expect:{} });
 
 function localValue(d) {
 	var p=function(v){return String(v).padStart(2,'0');};
@@ -38,12 +40,13 @@ return view.extend({
 		var latency=panel('网络延迟','阿里云（绿）/ 腾讯云（蓝），单位 ms');
 		var signal=panel('5G 信号','RSRP（红）/ RSRQ（橙）/ SINR（绿），单位 dB/dBm');
 		var status=E('span',{style:'margin-left:12px;color:#888'},'');
+		var bandPanel=E('div',{}),queryRequest=0;
 		var redraw=function(rows){draw(speed.canvas,rows,[{i:1,color:'#1e88e5',min:0,map:function(v){return v/1000000;}},{i:2,color:'#fb8c00',min:0,map:function(v){return v/1000000;}}]);draw(system.canvas,rows,[{i:3,color:'#e53935',min:0},{i:4,color:'#8e24aa',min:0}]);draw(temp.canvas,rows,[{i:5,color:'#e53935',min:0},{i:6,color:'#1e88e5',min:0},{i:7,color:'#fb8c00',min:0},{i:17,color:'#43a047',min:0}]);draw(latency.canvas,rows,[{i:8,color:'#43a047',min:0},{i:10,color:'#1e88e5',min:0}]);draw(signal.canvas,rows,[{i:14,color:'#e53935',min:-200},{i:15,color:'#fb8c00',min:-200},{i:16,color:'#43a047',min:-200}]);};
-		var query=function(){var a=Math.floor(new Date(from.value).getTime()/1000),b=Math.floor(new Date(to.value).getTime()/1000);if(!isFinite(a)||!isFinite(b)){ui.addNotification(null,E('p',{},'请选择有效的开始和结束时间。'));return;}status.textContent='正在查询…';return callHistory(a,b,2000).then(function(r){var rows=Array.isArray(r)?r:(r.rows||[]);status.textContent='显示 '+rows.length+' 个采样点';redraw(rows);});};
+		var query=function(){var a=Math.floor(new Date(from.value).getTime()/1000),b=Math.floor(new Date(to.value).getTime()/1000);if(!isFinite(a)||!isFinite(b)){ui.addNotification(null,E('p',{},'请选择有效的开始和结束时间。'));return;}if(a>b){var swap=a;a=b;b=swap;}var request=++queryRequest;status.textContent='正在查询…';return Promise.all([callHistory(a,b,2000),callBands(a,b,5000)]).then(function(r){if(request!==queryRequest)return;var rows=Array.isArray(r[0])?r[0]:(r[0].rows||[]);status.textContent='显示 '+rows.length+' 个采样点';redraw(rows);bandPanel.replaceChildren(bands.render(r[1],a,b));}).catch(function(err){if(request===queryRequest){status.textContent='查询失败';ui.addNotification(null,E('p',{},err.message),'error');}});};
 		var button=E('button',{class:'btn cbi-button cbi-button-action',click:query},'查询');
 		var lastHour=E('button',{class:'btn cbi-button',style:'margin-left:6px',click:function(){var n=new Date();from.value=localValue(new Date(n-3600000));to.value=localValue(n);query();}},'最近1小时');
 		var today=E('button',{class:'btn cbi-button',style:'margin-left:6px',click:function(){var n=new Date(),s=new Date(n.getFullYear(),n.getMonth(),n.getDate());from.value=localValue(s);to.value=localValue(n);query();}},'今天');
-		var root=E('div',{},[E('h2',{},'CPE 监控 · 历史查询'),E('div',{class:'cbi-section'},[E('label',{style:'margin-right:6px'},'开始'),from,E('label',{style:'margin:0 6px 0 14px'},'结束'),to,button,lastHour,today,status]),speed.node,system.node,temp.node,latency.node,signal.node]);
+		var root=E('div',{},[E('h2',{},'CPE 监控 · 历史查询'),E('div',{class:'cbi-section'},[E('label',{style:'margin-right:6px'},'开始'),from,E('label',{style:'margin:0 6px 0 14px'},'结束'),to,button,lastHour,today,status]),speed.node,system.node,temp.node,latency.node,signal.node,bandPanel]);
 		var rowsNow=[];var oldRedraw=redraw;redraw=function(rows){rowsNow=rows;oldRedraw(rows);};
 		tooltip(speed.canvas,function(){return rowsNow},[{i:1,name:'下载',color:'#1e88e5',min:0,fmt:function(v){return (v/1000000).toFixed(3)+' Mbps';}},{i:2,name:'上传',color:'#fb8c00',min:0,fmt:function(v){return (v/1000000).toFixed(3)+' Mbps';}}]);
 		tooltip(system.canvas,function(){return rowsNow},[{i:3,name:'CPU',color:'#e53935',min:0,fmt:function(v){return v.toFixed(0)+'%';}},{i:4,name:'内存',color:'#8e24aa',min:0,fmt:function(v){return v.toFixed(0)+'%';}}]);

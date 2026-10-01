@@ -2,9 +2,13 @@
 
 面向 Hiveton H5000M / ImmortalWrt 24.10 的轻量监控插件。
 
-当前版本：**v1.5.1**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
+当前版本：**v1.6.0**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
 
 ## 界面预览
+
+![v1.6.0 当前状态与在用频段](docs/images/cpemonitor-v1.6.0.png)
+
+![v1.6.0 在用频段历史与变化记录](docs/images/cpemonitor-v1.6.0-band-history.png)
 
 ![CPE 监控 v1.5.0：现在状态、时间范围筛选和月流量额度控制](docs/images/cpemonitor-v1.5.0.png)
 
@@ -26,10 +30,10 @@
 推荐下载 Release 中的 IPK 安装或升级：
 
 ```sh
-opkg install ./luci-app-cpemonitor_1.5.1-1_all.ipk
+opkg install ./luci-app-cpemonitor_1.6.0-1_all.ipk
 ```
 
-也可使用自解压安装包，执行 `sh luci-app-cpemonitor-1.5.1-1.run`（需预先安装依赖）。
+也可使用自解压安装包，执行 `sh luci-app-cpemonitor-1.6.0-1.run`（需预先安装依赖）。
 升级后若页面仍显示旧版，请按 **Ctrl+F5** 强制刷新浏览器缓存。
 
 上传并解压后，在插件目录执行：
@@ -84,3 +88,11 @@ LuCI 菜单：`状态 → CPE 监控`。
 - 持久目录：`/overlay/cpemonitor`
 
 所有周期、接口、探测地址和保留天数均可在 LuCI 设置页修改。
+
+## 在用频段记录（v1.6.0）
+
+通过 modem_ctrl / QModem 的通用数据接口记录采样时实际使用的频段和网络模式；不限定模组或频段列表。NR 使用 n 前缀，LTE 使用 B 前缀，WCDMA 使用 W 前缀；仅记录接口能识别的在用载波，缺少信息时显示未知。
+
+当前状态卡片显示最新频段；实时页和历史页展示每个模组的时间条与变化记录。辅载波只有接口报告时才记录，不声称覆盖完整聚合组合。能力列表、锁频列表及邻区不计入使用记录。灰色表示未知或未采样，变化时间为采样发现时间。
+
+沿用模组采样周期（默认 60 秒），缓存在 RAM 后按持久化周期保存，正常停止时保存；突然断电可能丢失尚未持久化记录。旧数据不能补算，频段历史最多返回最近 5000 次观察。无兼容管理接口的模组仍可使用其他监控功能，但频段显示未知；不直接发送厂商 AT 命令。新增依赖 ucode、ucode-mod-fs。

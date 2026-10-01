@@ -4,7 +4,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-cpemonitor
-PKG_VERSION:=1.5.1
+PKG_VERSION:=1.6.0
 PKG_RELEASE:=1
 PKG_MAINTAINER:=xiaokeikei
 PKG_LICENSE:=GPL-2.0-only
@@ -18,7 +18,7 @@ define Package/luci-app-cpemonitor
   SUBMENU:=3. Applications
   TITLE:=CPE traffic, system and 5G monitor for LuCI
   PKGARCH:=all
-  DEPENDS:=+luci-base +rpcd +jsonfilter +tc-tiny +kmod-ifb +kmod-sched-core +nftables-json +busybox
+  DEPENDS:=+luci-base +rpcd +jsonfilter +tc-tiny +kmod-ifb +kmod-sched-core +nftables-json +busybox +ucode +ucode-mod-fs
 endef
 
 define Package/luci-app-cpemonitor/description
@@ -43,6 +43,7 @@ define Package/luci-app-cpemonitor/install
 	$(INSTALL_BIN) ./root/usr/sbin/cpemonitor-quota $(1)/usr/sbin/cpemonitor-quota
 	$(INSTALL_DIR) $(1)/usr/lib/cpemonitor
 	$(INSTALL_DATA) ./root/usr/lib/cpemonitor/quota.sh $(1)/usr/lib/cpemonitor/quota.sh
+	$(INSTALL_DATA) ./root/usr/lib/cpemonitor/bands.uc $(1)/usr/lib/cpemonitor/bands.uc
 	$(INSTALL_DIR) $(1)/usr/libexec/rpcd
 	$(INSTALL_BIN) ./root/usr/libexec/rpcd/cpemonitor $(1)/usr/libexec/rpcd/cpemonitor
 	$(INSTALL_DIR) $(1)/usr/share/luci/menu.d
@@ -55,6 +56,8 @@ define Package/luci-app-cpemonitor/install
 	$(INSTALL_DATA) ./root/www/luci-static/resources/view/cpemonitor/overview.js $(1)/www/luci-static/resources/view/cpemonitor/overview.js
 	$(INSTALL_DATA) ./root/www/luci-static/resources/view/cpemonitor/history.js $(1)/www/luci-static/resources/view/cpemonitor/history.js
 	$(INSTALL_DATA) ./root/www/luci-static/resources/view/cpemonitor/settings.js $(1)/www/luci-static/resources/view/cpemonitor/settings.js
+	$(INSTALL_DIR) $(1)/www/luci-static/resources/cpemonitor
+	$(INSTALL_DATA) ./root/www/luci-static/resources/cpemonitor/bands.js $(1)/www/luci-static/resources/cpemonitor/bands.js
 endef
 
 define Package/luci-app-cpemonitor/postinst

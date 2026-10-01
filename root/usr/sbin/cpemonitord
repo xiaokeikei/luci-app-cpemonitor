@@ -73,7 +73,7 @@ read_fan() {
 
 read_modem() {
 	local j
-	j="$(ubus call modem_ctrl info 2>/dev/null)"
+	j="$(ubus -t 10 call modem_ctrl info 2>/dev/null)"
 	MODEM_TEMP="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="temperature"].value' 2>/dev/null | head -1)"
 	RSRP="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="RSRP"].value' 2>/dev/null | head -1)"
 	RSRQ="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="RSRQ"].value' 2>/dev/null | head -1)"
@@ -81,6 +81,33 @@ read_modem() {
 	MODEM_TEMP="$(num "$MODEM_TEMP")"; RSRP="$(num "$RSRP")"; RSRQ="$(num "$RSRQ")"; SINR="$(num "$SINR")"
 	[ -n "$MODEM_TEMP" ] || MODEM_TEMP=-1; [ -n "$RSRP" ] || RSRP=-999
 	[ -n "$RSRQ" ] || RSRQ=-999; [ -n "$SINR" ] || SINR=-999
+	local stamp tmp sections section cell port first=1
+	stamp=$(date +%s); tmp="$RAM_DIR/band-current.new"
+	printf '%s' "$j" | ucode /usr/lib/cpemonitor/bands.uc normalize "$stamp" modem_ctrl "$MODEM_SAMPLE" > "$tmp"
+	# A provider may omit serving-cell fields or be temporarily unreadable.
+	# Ask QModem's generic cell interface, never vendor-specific AT commands.
+	if ! jsonfilter -i "$tmp" -e '@.modems[*].bands[0]' 2>/dev/null | grep -q .; then
+		sections=$(uci -q show qmodem | sed -n 's/^qmodem\.\([^.=]*\)=modem-device$/\1/p')
+		if [ -n "$sections" ]; then
+			printf '[' > "$RAM_DIR/band-provider.tmp"
+			for section in $sections; do
+				case "$section" in *[!a-zA-Z0-9_-]*) continue;; esac
+				cell=$(ubus -t 8 call qmodem cell_info "{\"config_section\":\"$section\"}" 2>/dev/null)
+				port=$(uci -q get "qmodem.$section.at_port")
+				case "$port" in ''|*[!a-zA-Z0-9/_:.-]*) port=$section;; esac
+				[ -n "$cell" ] || cell='{}'
+				[ "$first" = 1 ] || printf ',' >> "$RAM_DIR/band-provider.tmp"; first=0
+				printf '{"id":"%s","config_section":"%s","data":%s}' "$port" "$section" "$cell" >> "$RAM_DIR/band-provider.tmp"
+			done
+			printf ']' >> "$RAM_DIR/band-provider.tmp"
+			ucode /usr/lib/cpemonitor/bands.uc normalize "$(date +%s)" qmodem "$MODEM_SAMPLE" < "$RAM_DIR/band-provider.tmp" > "$tmp"
+			rm -f "$RAM_DIR/band-provider.tmp"
+		fi
+	fi
+	if [ -s "$tmp" ]; then
+		mv "$tmp" "$RAM_DIR/band-current.json"
+		cat "$RAM_DIR/band-current.json" >> "$RAM_DIR/bands-$(date +%F).jsonl"
+	fi
 }
 
 save_state() {
@@ -97,9 +124,15 @@ checkpoint() {
 		cat "$f" >> "$DATA_DIR/samples/$base" && : > "$f"
 	done
 	[ -f "$RAM_DIR/daily.csv" ] && { [ -f "$DATA_DIR/daily.csv" ] || echo 'date,download_bytes,upload_bytes,total_bytes' > "$DATA_DIR/daily.csv"; cat "$RAM_DIR/daily.csv" >> "$DATA_DIR/daily.csv" && : > "$RAM_DIR/daily.csv"; }
+	mkdir -p "$DATA_DIR/bands"
+	for f in "$RAM_DIR"/bands-*.jsonl; do
+		[ -f "$f" ] || continue
+		cat "$f" >> "$DATA_DIR/bands/$(basename "$f")" && : > "$f"
+	done
 	save_state
 	sync
 	find "$DATA_DIR/samples" -type f -mtime "+$RETENTION" -delete 2>/dev/null
+	find "$DATA_DIR/bands" -type f -mtime "+$RETENTION" -delete 2>/dev/null
 	LAST_PERSIST=$(date +%s)
 }
 

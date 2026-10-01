@@ -4,7 +4,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-cpemonitor
-PKG_VERSION:=1.3.0
+PKG_VERSION:=1.4.0
 PKG_RELEASE:=1
 PKG_MAINTAINER:=xiaokeikei
 PKG_LICENSE:=GPL-2.0-only
@@ -59,7 +59,7 @@ define Package/luci-app-cpemonitor/postinst
 [ -n "$${IPKG_INSTROOT}" ] || {
 	/etc/init.d/cpemonitor enable
 	/etc/init.d/cpemonitor restart
-	rm -f /tmp/luci-indexcache /tmp/luci-modulecache/* 2>/dev/null
+	rm -f /tmp/luci-indexcache /tmp/luci-indexcache.* /tmp/luci-modulecache/* 2>/dev/null
 	/etc/init.d/rpcd restart
 	/etc/init.d/uhttpd reload
 }

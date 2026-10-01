@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0 - 2026-10-01
+
+- Add dashboard buttons for the last 10/30 minutes, 1/2/5/12 hours and today.
+- Switch all five monitoring charts together and retain the selected range during polling.
+- Ignore stale history responses when switching ranges quickly.
+- Show loading, empty-data and error feedback; wrap buttons on narrow screens.
+- Add a portable release builder, preserve existing configuration in the standalone installer, and clear LuCI JSON menu caches on upgrade.
+
 ## 1.3.0 - 2026-09-09
 
 - Replace the free-form WAN device field with a dynamically populated device selector.

@@ -4,6 +4,7 @@
 'require poll';
 'require form';
 'require uci';
+'require ui';
 
 var callCurrent = rpc.declare({ object: 'cpemonitor', method: 'current', expect: {} });
 var callHistory = rpc.declare({ object: 'cpemonitor', method: 'history', params: [ 'start', 'end', 'limit' ], expect: { rows: [] } });
@@ -40,11 +41,27 @@ return view.extend({
 		speedUnit=uci.get('cpemonitor','main','speed_unit')||'Mbps';
 		var hist=Array.isArray(data[1]) ? data[1] : (data[1].rows||[]);
 		var daily=Array.isArray(data[2]) ? data[2] : (data[2].rows||[]);
+		var ranges=[{seconds:600,label:'10分钟',title:'最近 10 分钟'},{seconds:1800,label:'半小时',title:'最近半小时'},{seconds:3600,label:'1小时',title:'最近 1 小时'},{seconds:7200,label:'2小时',title:'最近 2 小时'},{seconds:18000,label:'5小时',title:'最近 5 小时'},{seconds:43200,label:'12小时',title:'最近 12 小时'},{seconds:0,label:'当天',title:'当天'}];
+		var selectedRange=ranges[0], historyRequest=0;
+		var rangeTitle=E('span',{},'CPE 监控 · '+selectedRange.title);
+		var rangeStatus=E('span',{'aria-live':'polite',style:'font-size:12px;font-weight:normal'},'');
+		var rangeButtons=ranges.map(function(range){return E('button',{type:'button',class:'cbi-button','aria-pressed':range===selectedRange?'true':'false',style:'font-size:12px;padding:3px 8px;white-space:nowrap',click:function(){
+			selectedRange=range;rangeTitle.textContent='CPE 监控 · '+range.title;updateRangeButtons();
+			hist=[];charts();refreshHistory().catch(function(err){ui.addNotification(null,E('p',{},'加载监控数据失败：'+err.message),'error');});
+		}},range.label);});
+		function updateRangeButtons(){rangeButtons.forEach(function(button,i){var active=ranges[i]===selectedRange;button.className='cbi-button'+(active?' cbi-button-positive':'');button.setAttribute('aria-pressed',active?'true':'false');button.style.fontWeight=active?'bold':'normal';});}
+		function refreshHistory(){
+			var request=++historyRequest,now=Math.floor(Date.now()/1000),start=now-selectedRange.seconds;
+			if(!selectedRange.seconds){var midnight=new Date(now*1000);midnight.setHours(0,0,0,0);start=Math.floor(midnight.getTime()/1000);}
+			rangeStatus.textContent='加载中…';
+			return callHistory(start,now,1200).then(function(rows){if(request!==historyRequest)return;hist=Array.isArray(rows)?rows:(rows.rows||[]);rangeStatus.textContent=hist.length?'':'此时间范围暂无数据';charts();}).catch(function(err){if(request!==historyRequest)return;rangeStatus.textContent='加载失败，请重试';throw err;});
+		}
+		updateRangeButtons();
 		var speed=E('canvas',{style:'width:100%;height:260px'}), system=E('canvas',{style:'width:100%;height:260px'}), temperature=E('canvas',{style:'width:100%;height:260px'}), latency=E('canvas',{style:'width:100%;height:260px'}), signal=E('canvas',{style:'width:100%;height:260px'});
 		var unitSelect=E('select',{class:'cbi-input-select',style:'float:right',change:function(ev){speedUnit=ev.target.value;document.getElementById('cm-speed-title').firstChild.data='实时速率（下载蓝 / 上传橙，'+speedUnit+'）';if(lastCurrent){document.getElementById('cm-down').textContent=rate(lastCurrent.down_bps);document.getElementById('cm-up').textContent=rate(lastCurrent.up_bps);}charts();}},['Kbps','Mbps','KB/s','MB/s'].map(function(u){return E('option',{value:u,selected:u===speedUnit?'selected':null},u);}));
 		var cards=E('div',{style:'display:flex;flex-wrap:wrap'},[
 			card('cm-down','当前下载'),card('cm-up','当前上传'),card('cm-day','今日总流量'),card('cm-cpu','CPU / 内存'),card('cm-temp','CPU / 模组温度'),card('cm-fan','风扇转速'),card('cm-ping','阿里 / 腾讯延迟')]);
-		var root=E('div',{},[E('h2',{},'CPE 监控 · 最近 10 分钟'),cards,
+		var root=E('div',{},[E('h2',{style:'display:flex;align-items:center;flex-wrap:wrap;gap:10px'},[rangeTitle,E('span',{role:'group','aria-label':'监控时间范围',style:'display:flex;flex-wrap:wrap;gap:5px;align-items:center'},rangeButtons),rangeStatus]),cards,
 			E('div',{class:'cbi-section'},[E('h3',{id:'cm-speed-title'},['实时速率（下载蓝 / 上传橙，'+speedUnit+'）',unitSelect]),speed]),
 			E('div',{class:'cbi-section'},[E('h3',{},'系统使用率（CPU 红 / 内存紫）'),system]),
 			E('div',{class:'cbi-section'},[E('h3',{},'设备温度与风扇（CPU 红 / Wi-Fi 蓝 / 模组橙 / 风扇绿）'),temperature]),
@@ -58,7 +75,7 @@ return view.extend({
 		tooltip(signal,function(){return hist},[{i:14,name:'RSRP',color:'#e53935',min:-200,fmt:function(v){return v+' dBm';}},{i:15,name:'RSRQ',color:'#fb8c00',min:-200,fmt:function(v){return v+' dB';}},{i:16,name:'SINR',color:'#43a047',min:-200,fmt:function(v){return v+' dB';}}]);
 		function charts(){draw(speed,hist,[{i:1,color:'#1e88e5',min:0,map:speedValue},{i:2,color:'#fb8c00',min:0,map:speedValue}]);draw(system,hist,[{i:3,color:'#e53935',min:0},{i:4,color:'#8e24aa',min:0}]);draw(temperature,hist,[{i:5,color:'#e53935',min:0},{i:6,color:'#1e88e5',min:0},{i:7,color:'#fb8c00',min:0},{i:17,color:'#43a047',min:0}]);draw(latency,hist,[{i:8,color:'#43a047',min:0},{i:10,color:'#1e88e5',min:0}]);draw(signal,hist,[{i:14,color:'#e53935',min:-200},{i:15,color:'#fb8c00',min:-200},{i:16,color:'#43a047',min:-200}]);}
 		window.setTimeout(charts,0); window.addEventListener('resize',charts);
-		poll.add(function(){var now=Math.floor(Date.now()/1000);return Promise.all([callCurrent(),callHistory(now-600,now,1200)]).then(function(r){var x=r[0];lastCurrent=x;hist=Array.isArray(r[1]) ? r[1] : (r[1].rows||[]);document.getElementById('cm-down').textContent=rate(x.down_bps);document.getElementById('cm-up').textContent=rate(x.up_bps);document.getElementById('cm-day').textContent=bytes(Number(x.day_download)+Number(x.day_upload));document.getElementById('cm-cpu').textContent=x.cpu_pct+'% / '+x.mem_pct+'%';document.getElementById('cm-temp').textContent=x.cpu_temp+'°C / '+x.modem_temp+'°C';document.getElementById('cm-fan').textContent=(x.fan_pct == null ? '--' : x.fan_pct+'%');document.getElementById('cm-ping').textContent=x.aliyun_ms+' / '+x.tencent_ms+' ms';charts();});},10);
+		poll.add(function(){return Promise.all([callCurrent(),refreshHistory()]).then(function(r){var x=r[0];lastCurrent=x;document.getElementById('cm-down').textContent=rate(x.down_bps);document.getElementById('cm-up').textContent=rate(x.up_bps);document.getElementById('cm-day').textContent=bytes(Number(x.day_download)+Number(x.day_upload));document.getElementById('cm-cpu').textContent=x.cpu_pct+'% / '+x.mem_pct+'%';document.getElementById('cm-temp').textContent=x.cpu_temp+'°C / '+x.modem_temp+'°C';document.getElementById('cm-fan').textContent=(x.fan_pct == null ? '--' : x.fan_pct+'%');document.getElementById('cm-ping').textContent=x.aliyun_ms+' / '+x.tencent_ms+' ms';});},10);
 		return root;
 	},
 	handleSaveApply: null, handleSave: null, handleReset: null

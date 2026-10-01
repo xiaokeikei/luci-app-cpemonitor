@@ -3,4 +3,4 @@
 *.zip
 *.tar.gz
 .DS_Store
-
+.ipkbuild/

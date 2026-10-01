@@ -4,7 +4,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-cpemonitor
-PKG_VERSION:=1.4.0
+PKG_VERSION:=1.5.0
 PKG_RELEASE:=1
 PKG_MAINTAINER:=xiaokeikei
 PKG_LICENSE:=GPL-2.0-only
@@ -18,7 +18,7 @@ define Package/luci-app-cpemonitor
   SUBMENU:=3. Applications
   TITLE:=CPE traffic, system and 5G monitor for LuCI
   PKGARCH:=all
-  DEPENDS:=+luci-base +rpcd +jsonfilter
+  DEPENDS:=+luci-base +rpcd +jsonfilter +tc-tiny +kmod-ifb +kmod-sched-core +nftables-json +busybox
 endef
 
 define Package/luci-app-cpemonitor/description
@@ -40,6 +40,9 @@ define Package/luci-app-cpemonitor/install
 	$(INSTALL_BIN) ./root/etc/init.d/cpemonitor $(1)/etc/init.d/cpemonitor
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./root/usr/sbin/cpemonitord $(1)/usr/sbin/cpemonitord
+	$(INSTALL_BIN) ./root/usr/sbin/cpemonitor-quota $(1)/usr/sbin/cpemonitor-quota
+	$(INSTALL_DIR) $(1)/usr/lib/cpemonitor
+	$(INSTALL_DATA) ./root/usr/lib/cpemonitor/quota.sh $(1)/usr/lib/cpemonitor/quota.sh
 	$(INSTALL_DIR) $(1)/usr/libexec/rpcd
 	$(INSTALL_BIN) ./root/usr/libexec/rpcd/cpemonitor $(1)/usr/libexec/rpcd/cpemonitor
 	$(INSTALL_DIR) $(1)/usr/share/luci/menu.d
@@ -68,7 +71,14 @@ endef
 
 define Package/luci-app-cpemonitor/prerm
 #!/bin/sh
-[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/cpemonitor stop
+[ -n "$${IPKG_INSTROOT}" ] || {
+	/etc/init.d/cpemonitor stop
+	tries=0
+	while /etc/init.d/cpemonitor status >/dev/null 2>&1; do
+		tries=$$((tries + 1)); [ "$$tries" -lt 30 ] || exit 1
+		sleep 1
+	done
+}
 exit 0
 endef
 

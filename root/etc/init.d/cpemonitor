@@ -13,6 +13,7 @@ start_service() {
 	procd_set_param respawn 3600 5 5
 	procd_set_param stdout 1
 	procd_set_param stderr 1
+	procd_set_param term_timeout 20
 	procd_set_param limits nofile="1024 1024"
 	procd_close_instance
 }
@@ -22,7 +23,10 @@ reload_service() {
 	start
 }
 
+stop_service() {
+	/usr/sbin/cpemonitor-quota cleanup >/dev/null 2>&1
+}
+
 service_triggers() {
 	procd_add_reload_trigger cpemonitor
 }
-

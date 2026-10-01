@@ -1,0 +1,175 @@
+#!/bin/sh
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+. /usr/lib/cpemonitor/quota.sh
+RAM_DIR=/tmp/cpemonitor
+mkdir -p "$RAM_DIR"
+# Serialize daemon updates and manual actions; lock is released even on crash.
+exec 9>"$RAM_DIR/quota.lock"
+tries=0
+until flock -n 9; do
+    tries=$((tries + 1)); [ "$tries" -lt 10 ] || exit 1
+    sleep 1
+done
+config_load cpemonitor
+config_get DATA_DIR main data_dir /overlay/cpemonitor
+config_get IFACE main interface wwan0
+config_get_bool Q_ENABLED main quota_enabled 0
+config_get Q_GB main quota_gb 1000
+config_get Q_PERCENT main quota_percent 80
+config_get Q_DOWN main quota_down_mbps 10
+config_get Q_UP main quota_up_mbps 2
+config_get Q_BILL main quota_bill_day 1
+Q_ERROR=''
+for value in "$Q_GB" "$Q_PERCENT" "$Q_DOWN" "$Q_UP" "$Q_BILL"; do
+    case "$value" in ''|*[!0-9]*) Q_ERROR='额度、阈值、速率和账单日必须为正整数';; esac
+done
+if [ -z "$Q_ERROR" ]; then
+    [ "$Q_GB" -ge 1 ] && [ "$Q_GB" -le 10000000 ] &&
+    [ "$Q_PERCENT" -ge 1 ] && [ "$Q_PERCENT" -le 99 ] &&
+    [ "$Q_DOWN" -ge 1 ] && [ "$Q_DOWN" -le 1000000 ] &&
+    [ "$Q_UP" -ge 1 ] && [ "$Q_UP" -le 1000000 ] &&
+    [ "$Q_BILL" -ge 1 ] && [ "$Q_BILL" -le 28 ] || Q_ERROR='额度控制参数超出有效范围'
+fi
+if [ -n "$Q_ERROR" ]; then Q_GB=1000; Q_PERCENT=80; Q_DOWN=10; Q_UP=2; Q_BILL=1; fi
+case "$IFACE" in ''|*[!a-zA-Z0-9_.:-]*|lo|br-*|ra[0-9]*|rai[0-9]*) Q_ERROR='请选择独立的 WAN 设备，不能限制局域网设备';; esac
+Q_LIMIT=$((Q_GB * 1000000000))
+HNAT=/sys/kernel/debug/hnat/hook_toggle
+IFB=cmquota0
+
+unshape() {
+    local old
+    old=$(cat "$RAM_DIR/quota-interface" 2>/dev/null)
+    if [ -n "$old" ]; then
+        tc qdisc show dev "$old" 2>/dev/null | grep -q 'tbf 1c01:' && tc qdisc del dev "$old" root 2>/dev/null
+        # Only remove the ingress qdisc recorded as created by this plugin.
+        [ -f "$RAM_DIR/quota-ingress" ] && tc qdisc del dev "$old" ingress 2>/dev/null
+    fi
+    [ -f "$RAM_DIR/quota-ifb" ] && ip link del "$IFB" 2>/dev/null
+    rm -f "$RAM_DIR/quota-interface" "$RAM_DIR/quota-ingress" "$RAM_DIR/quota-ifb"
+}
+unblock() { nft list table inet cpe_quota >/dev/null 2>&1 && nft delete table inet cpe_quota; return 0; }
+acceleration_restore() {
+    if [ -f "$RAM_DIR/quota-hnat" ]; then
+        [ "$(cat "$RAM_DIR/quota-hnat")" = enabled ] && [ -w "$HNAT" ] && echo 1 > "$HNAT"
+        rm -f "$RAM_DIR/quota-hnat"
+    fi
+}
+acceleration_disable() {
+    if [ "$(uci -q get firewall.@defaults[0].flow_offloading)" = 1 ] ||
+       [ "$(uci -q get firewall.@defaults[0].flow_offloading_hw)" = 1 ]; then
+        Q_ERROR='请先关闭防火墙的软件/硬件流量分载，否则额度控制可能被绕过'; return 1
+    fi
+    if [ -w "$HNAT" ]; then
+        [ -f "$RAM_DIR/quota-hnat" ] || cat "$HNAT" > "$RAM_DIR/quota-hnat"
+        [ "$(cat "$HNAT")" = disabled ] || echo 0 > "$HNAT"
+        [ "$(cat "$HNAT")" = disabled ] || { Q_ERROR='无法关闭 HNAT 硬件加速'; return 1; }
+    fi
+}
+shape() {
+    local root old
+    old=$(cat "$RAM_DIR/quota-interface" 2>/dev/null)
+    [ -n "$old" ] && [ "$old" != "$IFACE" ] && unshape
+    root=$(tc qdisc show dev "$IFACE" 2>/dev/null | grep ' root ')
+    case "$root" in *'tbf 1c01:'*|*'fq_codel 0:'*|*'noqueue 0:'*|'') ;; *) Q_ERROR='WAN 已有其他 QoS 队列，请先停用其他限速插件'; return 1;; esac
+    if [ ! -f "$RAM_DIR/quota-ingress" ] && tc qdisc show dev "$IFACE" | grep -Eq 'ingress|clsact'; then
+        Q_ERROR='WAN 已有其他入站 QoS 规则'; return 1
+    fi
+    if [ ! -f "$RAM_DIR/quota-ifb" ]; then
+        ip link add "$IFB" type ifb || { Q_ERROR='无法创建下载限速设备，请安装 kmod-ifb'; return 1; }
+        touch "$RAM_DIR/quota-ifb"
+    fi
+    echo "$IFACE" > "$RAM_DIR/quota-interface"
+    ip link set "$IFB" up || return 1
+    tc qdisc replace dev "$IFB" root handle 1c02: tbf rate "${Q_DOWN}mbit" burst 256kb latency 100ms || return 1
+    if [ ! -f "$RAM_DIR/quota-ingress" ]; then
+        tc qdisc add dev "$IFACE" handle ffff: ingress || return 1
+        touch "$RAM_DIR/quota-ingress"
+    fi
+    tc filter replace dev "$IFACE" parent ffff: protocol all pref 49150 matchall action mirred egress redirect dev "$IFB" || return 1
+    tc qdisc replace dev "$IFACE" root handle 1c01: tbf rate "${Q_UP}mbit" burst 256kb latency 100ms
+}
+block() {
+    # Keep DHCP/IPv6 neighbour discovery working; LAN management never matches.
+    local prefix=''
+    nft list table inet cpe_quota >/dev/null 2>&1 && prefix='delete table inet cpe_quota'
+    nft -f - <<EOF
+$prefix
+table inet cpe_quota {
+ chain forward { type filter hook forward priority -200; policy accept;
+  iifname "$IFACE" counter drop
+  oifname "$IFACE" counter drop
+ }
+ chain output { type filter hook output priority -200; policy accept;
+  oifname "$IFACE" udp sport { 68, 546 } udp dport { 67, 547 } accept
+  oifname "$IFACE" meta l4proto ipv6-icmp icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } accept
+  oifname "$IFACE" counter drop
+ }
+ chain input { type filter hook input priority -200; policy accept;
+  iifname "$IFACE" udp sport { 67, 547 } udp dport { 68, 546 } accept
+  iifname "$IFACE" meta l4proto ipv6-icmp icmpv6 type { nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert } accept
+  iifname "$IFACE" counter drop
+ }
+}
+EOF
+}
+
+case "$1" in
+    cleanup) unshape; unblock; acceleration_restore; exit 0 ;;
+    update) Q_DAY="$2"; Q_RX="$3"; Q_TX="$4" ;;
+    unlock|resume)
+        Q_DAY=$(date +%F); set -- "$1" $(cat "$RAM_DIR/current" 2>/dev/null)
+        Q_RX=${3:-0}; Q_TX=${4:-0}
+        quota_period "$Q_DAY" "$Q_BILL"
+        mkdir -p "$DATA_DIR"
+        if [ "$1" = unlock ]; then
+            echo "$PERIOD_START" > "$DATA_DIR/quota-override.new" && mv "$DATA_DIR/quota-override.new" "$DATA_DIR/quota-override"
+            unshape; unblock
+        else rm -f "$DATA_DIR/quota-override"; fi
+        sync
+        ;;
+    *) exit 1 ;;
+esac
+quota_period "$Q_DAY" "$Q_BILL"
+set -- $(quota_sum); Q_RX=$1; Q_TX=$2; Q_TOTAL=$((Q_RX + Q_TX))
+Q_OVERRIDE=$(cat "$DATA_DIR/quota-override" 2>/dev/null)
+quota_decide
+Q_STATE=$Q_TARGET
+if [ "$Q_ENABLED" != 1 ]; then unshape; unblock; acceleration_restore
+elif [ -z "$Q_ERROR" ] && acceleration_disable; then
+    case "$Q_TARGET" in
+        limited)
+            signature="$IFACE:$Q_DOWN:$Q_UP"
+            if [ "$(cat "$RAM_DIR/quota-shape" 2>/dev/null)" != "$signature" ] ||
+               ! tc qdisc show dev "$IFACE" | grep -q 'tbf 1c01:' ||
+               ! tc qdisc show dev "$IFB" 2>/dev/null | grep -q 'tbf 1c02:'; then
+                if shape; then echo "$signature" > "$RAM_DIR/quota-shape"
+                else [ -n "$Q_ERROR" ] || Q_ERROR='限速规则应用失败，请检查 tc 和调度模块'; unshape; fi
+            fi
+            unblock ;;
+        blocked)
+            unshape
+            if [ "$(cat "$RAM_DIR/quota-block-interface" 2>/dev/null)" != "$IFACE" ] || ! nft list table inet cpe_quota >/dev/null 2>&1; then
+                if block; then echo "$IFACE" > "$RAM_DIR/quota-block-interface"
+                else Q_ERROR='断网规则应用失败，请检查 nftables'; fi
+            fi ;;
+        *) unshape; unblock ;;
+    esac
+fi
+[ "$Q_TARGET" = blocked ] || rm -f "$RAM_DIR/quota-block-interface"
+[ "$Q_TARGET" = limited ] || rm -f "$RAM_DIR/quota-shape"
+if [ -n "$Q_ERROR" ] && [ "$Q_ENABLED" = 1 ]; then Q_STATE=error; fi
+Q_USED=$(awk -v n="$Q_TOTAL" -v d="$Q_LIMIT" 'BEGIN {printf "%.2f",n*100/d}')
+json_init
+json_add_string period_start "$PERIOD_START"; json_add_string period_end "$PERIOD_END"
+json_add_int download "$Q_RX"; json_add_int upload "$Q_TX"; json_add_int total "$Q_TOTAL"
+json_add_int limit "$Q_LIMIT"; json_add_double percent "$Q_USED"
+json_add_int enabled "$Q_ENABLED"; json_add_int threshold "$Q_PERCENT"
+json_add_int down_mbps "$Q_DOWN"; json_add_int up_mbps "$Q_UP"
+json_add_string state "$Q_STATE"; json_add_string error "$Q_ERROR"
+json_dump > "$RAM_DIR/monthly.new" && mv "$RAM_DIR/monthly.new" "$RAM_DIR/monthly.json"
+if [ "$(cat "$RAM_DIR/quota-last-state" 2>/dev/null)" != "$Q_STATE" ]; then
+    logger -t cpemonitor "Monthly quota: $Q_STATE $Q_ERROR"
+    echo "$Q_STATE" > "$RAM_DIR/quota-last-state"
+fi
+cat "$RAM_DIR/monthly.json"

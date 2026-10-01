@@ -16,6 +16,7 @@ load_config() {
 	config_get TEN_HOST main tencent_host 119.29.29.29
 	config_get PING_COUNT main ping_count 1
 	config_get PING_TIMEOUT main ping_timeout 2
+	config_get_bool QUOTA_ENABLED main quota_enabled 0
 	FAN_PWM_FILE="$(uci -q get fancontrol.settings.fan_file)"
 	FAN_MAX="$(uci -q get fancontrol.settings.max_speed)"
 	[ -n "$FAN_PWM_FILE" ] || FAN_PWM_FILE=/sys/class/hwmon/hwmon2/pwm1
@@ -23,6 +24,7 @@ load_config() {
 	[ "$SAMPLE" -ge 2 ] 2>/dev/null || SAMPLE=10
 	[ "$MODEM_SAMPLE" -ge "$SAMPLE" ] 2>/dev/null || MODEM_SAMPLE=$SAMPLE
 	[ "$PERSIST" -ge 60 ] 2>/dev/null || PERSIST=21600
+	[ "$RETENTION" -ge 35 ] 2>/dev/null || RETENTION=35
 }
 
 num() { echo "$1" | grep -Eo -- '-?[0-9]+([.][0-9]+)?' | head -1; }
@@ -81,6 +83,11 @@ read_modem() {
 	[ -n "$RSRQ" ] || RSRQ=-999; [ -n "$SINR" ] || SINR=-999
 }
 
+save_state() {
+	echo "$DAY $DAY_RX $DAY_TX $PREV_RX $PREV_TX $BOOT_ID" > "$DATA_DIR/state.new" && mv "$DATA_DIR/state.new" "$DATA_DIR/state"
+	LAST_STATE=$(date +%s)
+}
+
 checkpoint() {
 	mkdir -p "$DATA_DIR/samples"
 	for f in "$RAM_DIR"/samples-*.csv; do
@@ -90,23 +97,34 @@ checkpoint() {
 		cat "$f" >> "$DATA_DIR/samples/$base" && : > "$f"
 	done
 	[ -f "$RAM_DIR/daily.csv" ] && { [ -f "$DATA_DIR/daily.csv" ] || echo 'date,download_bytes,upload_bytes,total_bytes' > "$DATA_DIR/daily.csv"; cat "$RAM_DIR/daily.csv" >> "$DATA_DIR/daily.csv" && : > "$RAM_DIR/daily.csv"; }
-	echo "$DAY $DAY_RX $DAY_TX $PREV_RX $PREV_TX" > "$DATA_DIR/state"
+	save_state
 	sync
 	find "$DATA_DIR/samples" -type f -mtime "+$RETENTION" -delete 2>/dev/null
 	LAST_PERSIST=$(date +%s)
 }
 
 load_config; mkdir -p "$DATA_DIR"
-NOW=$(date +%s); LAST_PERSIST=$NOW; LAST_MODEM=0
+NOW=$(date +%s); LAST_PERSIST=$NOW; LAST_STATE=$NOW; LAST_MODEM=0
+BOOT_ID=$(cat /proc/sys/kernel/random/boot_id)
 RX=$(read_counter rx_bytes); TX=$(read_counter tx_bytes); PREV_RX=$RX; PREV_TX=$TX
 DAY=$(date +%F); DAY_RX=0; DAY_TX=0
 if [ -f "$DATA_DIR/state" ]; then
-	read OLD_DAY OLD_RX OLD_TX OLD_PREV_RX OLD_PREV_TX < "$DATA_DIR/state"
+	read OLD_DAY OLD_RX OLD_TX OLD_PREV_RX OLD_PREV_TX OLD_BOOT < "$DATA_DIR/state"
 	if [ "$OLD_DAY" = "$DAY" ]; then DAY_RX=$OLD_RX; DAY_TX=$OLD_TX; fi
+	# Recover yesterday's last minute checkpoint after a power loss at midnight.
+	if [ -n "$OLD_DAY" ] && [ "$OLD_DAY" \< "$DAY" ] &&
+	   ! awk -F, -v d="$OLD_DAY" '$1 == d { found=1 } END { exit !found }' "$DATA_DIR/daily.csv" 2>/dev/null; then
+		[ -f "$DATA_DIR/daily.csv" ] || echo 'date,download_bytes,upload_bytes,total_bytes' > "$DATA_DIR/daily.csv"
+		echo "$OLD_DAY,$OLD_RX,$OLD_TX,$((OLD_RX + OLD_TX))" >> "$DATA_DIR/daily.csv"
+	fi
+	if [ "$OLD_BOOT" = "$BOOT_ID" ] && [ "$OLD_DAY" = "$DAY" ]; then
+		[ "$RX" -ge "$OLD_PREV_RX" ] && PREV_RX=$OLD_PREV_RX
+		[ "$TX" -ge "$OLD_PREV_TX" ] && PREV_TX=$OLD_PREV_TX
+	fi
 fi
 read_cpu; read_modem
 
-trap 'checkpoint; exit 0' TERM INT
+trap 'checkpoint; /usr/sbin/cpemonitor-quota cleanup >/dev/null; exit 0' TERM INT
 while :; do
 	START=$(date +%s); CUR_DAY=$(date +%F)
 	RX=$(read_counter rx_bytes); TX=$(read_counter tx_bytes)
@@ -126,7 +144,10 @@ while :; do
 	DISK_PCT=$(df -P "$DATA_DIR" | awk 'NR==2{gsub(/%/,"",$5);print $5}')
 	echo "$START,$DOWN_BPS,$UP_BPS,$CPU_PCT,$MEM_PCT,$CPU_TEMP,$WIFI_TEMP,$MODEM_TEMP,$ALI_MS,$ALI_LOSS,$TEN_MS,$TEN_LOSS,$LOAD1,$DISK_PCT,$RSRP,$RSRQ,$SINR,$FAN_PCT" >> "$RAM_DIR/samples-$DAY.csv"
 	echo "$START $DAY_RX $DAY_TX $DOWN_BPS $UP_BPS $CPU_PCT $MEM_PCT $CPU_TEMP $WIFI_TEMP $MODEM_TEMP $ALI_MS $TEN_MS $LOAD1 $DISK_PCT $RSRP $RSRQ $SINR $FAN_PCT" > "$RAM_DIR/current"
+	/usr/sbin/cpemonitor-quota update "$DAY" "$DAY_RX" "$DAY_TX" >/dev/null
+	[ "$QUOTA_ENABLED" = 1 ] && [ $((START - LAST_STATE)) -ge 60 ] && save_state
 	[ $((START - LAST_PERSIST)) -ge "$PERSIST" ] && checkpoint
 	ELAPSED=$(($(date +%s) - START)); SLEEP=$((SAMPLE - ELAPSED)); [ "$SLEEP" -gt 0 ] || SLEEP=1
-	sleep "$SLEEP"
+	# Waiting on a child lets TERM interrupt promptly and flush accounting.
+	sleep "$SLEEP" & wait $!
 done

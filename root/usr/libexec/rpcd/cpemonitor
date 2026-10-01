@@ -46,6 +46,12 @@ daily() {
 }
 
 case "$1" in
-	list) echo '{"current":{},"history":{"start":"Integer","end":"Integer","limit":"Integer"},"daily":{}}' ;;
-	call) case "$2" in current) current;; history) history;; daily) daily;; esac ;;
+	list) echo '{"current":{},"history":{"start":"Integer","end":"Integer","limit":"Integer"},"daily":{},"monthly":{},"quota_action":{"action":"String"}}' ;;
+	call) case "$2" in
+		current) current;; history) history;; daily) daily;;
+		monthly) cat /tmp/cpemonitor/monthly.json 2>/dev/null || echo '{}' ;;
+		quota_action)
+			json_load "$(cat)"; json_get_var action action
+			case "$action" in unlock|resume) /usr/sbin/cpemonitor-quota "$action";; *) echo '{"error":"无效操作"}';; esac ;;
+		esac ;;
 esac

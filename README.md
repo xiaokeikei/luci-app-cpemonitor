@@ -2,11 +2,11 @@
 
 面向 Hiveton H5000M / ImmortalWrt 24.10 的轻量监控插件。
 
-当前版本：**v1.4.0**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
+当前版本：**v1.5.0**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
 
 ## 界面预览
 
-![CPE 监控 v1.4.0：时间范围筛选与实时监控图表](docs/images/cpemonitor-v1.4.0.png)
+![CPE 监控 v1.5.0：现在状态、时间范围筛选和月流量额度控制](docs/images/cpemonitor-v1.5.0.png)
 
 ## 指标
 
@@ -24,10 +24,10 @@
 推荐下载 Release 中的 IPK 安装或升级：
 
 ```sh
-opkg install ./luci-app-cpemonitor_1.4.0-1_all.ipk
+opkg install ./luci-app-cpemonitor_1.5.0-1_all.ipk
 ```
 
-也可下载自解压安装包，执行 `sh luci-app-cpemonitor-1.4.0-1.run`。
+也可使用自解压安装包，执行 `sh luci-app-cpemonitor-1.5.0-1.run`（需预先安装依赖）。
 升级后若页面仍显示旧版，请按 **Ctrl+F5** 强制刷新浏览器缓存。
 
 上传并解压后，在插件目录执行：
@@ -38,6 +38,8 @@ chmod +x install.sh
 ```
 
 LuCI 菜单：`状态 → CPE 监控`。
+
+顶部提供“现在状态”“历史查询”“设置”入口；每日流量表按“日期、上传、下载、总流量”显示。
 
 - `CPE 监控`：默认滚动显示最近 10 分钟，标题栏可切换最近半小时、1/2/5/12 小时及当天（零点至当前）；所有监控图表同步切换，自动刷新保留所选范围
 - `历史查询`：按日期和起止时间查询，长时间段自动抽样
@@ -54,7 +56,19 @@ LuCI 菜单：`状态 → CPE 监控`。
 
 ## 打包
 
-在源码目录运行 `python tools/build_release.py`（Python 3），产物输出到上一级的 `versions/v1.4.0/`，包括 IPK、自解压安装包、源码 ZIP 和 SHA256 校验文件。
+在源码目录运行 `python tools/build_release.py`（Python 3），产物输出到上一级的对应 `versions/` 目录，包括 IPK、自解压安装包、源码 ZIP 和 SHA256 校验文件。
+
+## 月流量与额度控制（v1.5.0）
+
+- 展示本期下载、上传、合计、额度、剩余和使用百分比；沿用实际采集的每日累计，未采集的历史流量不能补算。
+- 设置页可填写整数 GB 额度、限速阈值（1–99%）、下载/上传 Mbps，以及每月账单日（1–28，默认 1 日）。1 GB = 1,000,000,000 字节。
+- 达到阈值使用 tc/TBF + IFB 双向限速；100% 后通过独立 nftables 表暂停选定 WAN 的 IPv4/IPv6 数据流量，局域网管理仍可访问，DHCP/IPv6 邻居发现保留。
+- 监控页可立即解除限制至本期结束，或恢复自动限制；豁免保存在持久目录，重启后继续有效，下期自动失效。
+- 首次开启须在弹窗确认统计与运营商计费可能有偏差。采样间隔、突然断电和协议开销会导致误差；下载限速无法撤回已到达模组的数据，请留出额度余量。
+- 开启控制时每分钟保存累计检查点，正常停止时立即保存；突然断电仍可能丢失最近一分钟，关闭控制时沿用原持久化周期。
+- 控制开启期间暂停 MediaTek HNAT，关闭或停止服务时恢复原状态。若启用了防火墙流量分载或 WAN 存在其他 QoS 队列，会显示错误，请先停用冲突功能。
+- 依赖：tc-tiny、kmod-ifb、kmod-sched-core、nftables-json、BusyBox 的 flock 命令。限制默认关闭；未限制其他 WAN 设备。
+- H5000M 实机 SSH 测试通过：WAN 双向 TBF/IFB 队列计数增长，100% 阻断、局域网管理保留、立即解除恢复联网，以及关闭后的 HNAT 恢复。
 
 ## 默认设置
 

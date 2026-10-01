@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0 - 2026-10-01
+
+- Add a current-status navigation tab and label daily traffic columns as date, upload, download and total.
+
+- Add monthly/billing-cycle traffic totals with decimal-GB quotas and configurable billing days.
+- Add configurable threshold-based download/upload shaping and WAN blocking at 100%.
+- Add persistent cycle exemptions and immediate unlock/resume controls.
+- Require an explicit measurement-discrepancy acknowledgement before enabling restrictions.
+- Save accounting every minute while quota control is enabled, preserve same-boot counter deltas, and restore owned network rules/offload state on shutdown.
+- Add accounting and boundary tests; quota control is disabled by default.
+
 ## 1.4.0 - 2026-10-01
 
 - Add dashboard buttons for the last 10/30 minutes, 1/2/5/12 hours and today.

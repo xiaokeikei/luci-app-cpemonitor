@@ -12,12 +12,20 @@ VERSION = re.search(r"PKG_VERSION:=(\S+)", (BASE / "Makefile").read_text()).grou
 RELEASE = re.search(r"PKG_RELEASE:=(\S+)", (BASE / "Makefile").read_text()).group(1)
 OUT = BASE.parent / "versions" / ("v" + VERSION)
 OUT.mkdir(parents=True, exist_ok=True)
-EXECUTABLES = {"etc/init.d/cpemonitor", "usr/sbin/cpemonitord", "usr/libexec/rpcd/cpemonitor"}
+EXECUTABLES = {"etc/init.d/cpemonitor", "usr/sbin/cpemonitord", "usr/sbin/cpemonitor-quota", "usr/libexec/rpcd/cpemonitor"}
 
 
 def archive(files):
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w:gz", format=tarfile.GNU_FORMAT) as tar:
+        directories = {"."}
+        for name, _, _ in files:
+            parent = pathlib.PurePosixPath(name).parent
+            directories.update(str(p) for p in [parent, *parent.parents])
+        for name in sorted(directories, key=lambda p: (p.count("/"), p)):
+            info = tarfile.TarInfo("./" if name == "." else "./" + name)
+            info.type, info.mode, info.mtime = tarfile.DIRTYPE, 0o755, 0
+            tar.addfile(info)
         for name, content, mode in files:
             info = tarfile.TarInfo("./" + name)
             info.size, info.mode, info.mtime = len(content), mode, 0
@@ -26,7 +34,8 @@ def archive(files):
 
 
 def source_bytes(path):
-    return path.read_bytes().replace(b"\r\n", b"\n")
+    data = path.read_bytes()
+    return data if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp"} else data.replace(b"\r\n", b"\n")
 
 
 root_files = [(p.relative_to(BASE / "root").as_posix(), source_bytes(p),
@@ -40,7 +49,7 @@ Section: luci
 Priority: optional
 Maintainer: xiaokeikei
 License: GPL-2.0-only
-Depends: luci-base, rpcd, jsonfilter
+Depends: luci-base, rpcd, jsonfilter, tc-tiny, kmod-ifb, kmod-sched-core, nftables-json, busybox
 """.encode()
 postinst = b'''#!/bin/sh
 [ -n "${IPKG_INSTROOT}" ] || {
@@ -52,16 +61,23 @@ postinst = b'''#!/bin/sh
 }
 exit 0
 '''
-prerm = b'#!/bin/sh\n[ -n "${IPKG_INSTROOT}" ] || /etc/init.d/cpemonitor stop\nexit 0\n'
+prerm = b'''#!/bin/sh
+[ -n "${IPKG_INSTROOT}" ] || {
+    /etc/init.d/cpemonitor stop
+    tries=0
+    while /etc/init.d/cpemonitor status >/dev/null 2>&1; do
+        tries=$((tries + 1)); [ "$tries" -lt 30 ] || exit 1
+        sleep 1
+    done
+}
+exit 0
+'''
 control_tar = archive([("control", control, 0o644), ("conffiles", b"/etc/config/cpemonitor\n", 0o644),
                        ("postinst", postinst, 0o755), ("prerm", prerm, 0o755)])
 data_tar = archive(root_files)
-ipk = bytearray(b"!<arch>\n")
-for name, content in [("debian-binary", b"2.0\n"), ("control.tar.gz", control_tar), ("data.tar.gz", data_tar)]:
-    ipk.extend(f"{name + '/':<16}{0:<12}{0:<6}{0:<6}{'100644':<8}{len(content):<10}`\n".encode())
-    ipk.extend(content)
-    if len(content) % 2:
-        ipk.extend(b"\n")
+# OpenWrt 24.10 ipkg-build uses a gzip-compressed tar outer container.
+ipk = archive([("debian-binary", b"2.0\n", 0o644),
+               ("data.tar.gz", data_tar, 0o644), ("control.tar.gz", control_tar, 0o644)])
 (OUT / f"luci-app-cpemonitor_{VERSION}-{RELEASE}_all.ipk").write_bytes(ipk)
 
 payload = archive([("root/" + n, b, m) for n, b, m in root_files] +
@@ -79,11 +95,14 @@ __PAYLOAD__
 (OUT / f"luci-app-cpemonitor-{VERSION}-{RELEASE}.run").write_bytes(header + base64.encodebytes(payload))
 sources = [p for p in BASE.iterdir() if p.is_file() and p.suffix == ".md"]
 sources += [BASE / n for n in ["Makefile", "LICENSE", "install.sh", "uninstall.sh", ".gitignore"]]
-sources += [p for folder in ["root", "tools"] for p in (BASE / folder).rglob("*") if p.is_file() and "__pycache__" not in p.parts]
+sources += [p for folder in ["root", "tools", "docs", "tests"] for p in (BASE / folder).rglob("*") if p.is_file() and "__pycache__" not in p.parts]
 with zipfile.ZipFile(OUT / f"luci-app-cpemonitor-{VERSION}-{RELEASE}-source.zip", "w", zipfile.ZIP_DEFLATED) as z:
     for p in sorted(sources):
         z.writestr("luci-app-cpemonitor/" + p.relative_to(BASE).as_posix(), source_bytes(p))
 (OUT / f"RELEASE_NOTES-v{VERSION}.md").write_bytes(source_bytes(BASE / f"RELEASE_NOTES-v{VERSION}.md"))
+screenshot = BASE / "docs" / "images" / f"cpemonitor-v{VERSION}.png"
+if screenshot.exists():
+    (OUT / screenshot.name).write_bytes(screenshot.read_bytes())
 assets = sorted(p for p in OUT.iterdir() if p.is_file() and p.name != "SHA256SUMS")
 (OUT / "SHA256SUMS").write_text("".join(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in assets), encoding="utf-8")
 print(OUT)

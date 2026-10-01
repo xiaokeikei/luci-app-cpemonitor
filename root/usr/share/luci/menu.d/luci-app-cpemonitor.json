@@ -4,6 +4,11 @@
 		"order": 35,
 		"action": { "type": "view", "path": "cpemonitor/overview" },
 		"depends": { "acl": [ "luci-app-cpemonitor" ] }
+	},
+	"admin/status/cpemonitor/current": {
+		"title": "现在状态",
+		"order": 1,
+		"action": { "type": "view", "path": "cpemonitor/overview" },
+		"depends": { "acl": [ "luci-app-cpemonitor" ] }
 	}
 }
-

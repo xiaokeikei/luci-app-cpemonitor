@@ -4,6 +4,10 @@
 
 当前版本：**v1.4.0**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
 
+## 界面预览
+
+![CPE 监控 v1.4.0：时间范围筛选与实时监控图表](docs/images/cpemonitor-v1.4.0.png)
+
 ## 指标
 
 - WAN 每日上行、下行及总流量（零点结算）

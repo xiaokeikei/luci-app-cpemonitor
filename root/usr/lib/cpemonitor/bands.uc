@@ -75,6 +75,25 @@ if (ARGV[0] == 'normalize') {
     for (let i = 0; i < length(items); i++) push(modems, parse_modem(items[i], i, ARGV[2] || 'unknown'));
     print(sprintf('%J\n', { timestamp: +ARGV[1], interval: +ARGV[3], modems: modems }));
 }
+else if (ARGV[0] == 'retain') {
+    let current = json(readfile('/dev/stdin')), previous;
+    try { previous = json(readfile(ARGV[1])); } catch (e) { previous = {}; }
+    let modems = [], seen = {};
+    for (let m in (current.modems ?? [])) {
+        if (m.status == 'known' && length(m.bands ?? [])) {
+            push(modems, m); seen[m.id] = true;
+        }
+    }
+    // Keep each modem's last valid reading until that modem reports new bands.
+    for (let m in (previous.modems ?? [])) {
+        if (!seen[m.id] && m.status == 'known' && length(m.bands ?? [])) {
+            push(modems, m); seen[m.id] = true;
+        }
+    }
+    for (let m in (current.modems ?? [])) if (!seen[m.id]) push(modems, m);
+    current.modems = modems;
+    print(sprintf('%J\n', current));
+}
 else if (ARGV[0] == 'history') {
     let start = +ARGV[1], end = +ARGV[2], limit = +ARGV[3], file = open('/dev/stdin', 'r');
     let ring = [], count = 0, line;

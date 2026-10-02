@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.1 - 2026-10-02
+
+- Retain the last valid serving-band and modem-temperature readings when collection fails; refresh on successful readings.
+- Add daily upload, download and total traffic curves with a calendar-month default and custom inclusive date ranges.
+- Include today's live traffic and unflushed daily records, deduplicate dates and expose all retained daily history.
+- Hide the monthly quota panel when quota control is disabled.
+- Order dashboard sections as speed, latency, system usage, temperature, signal, bands, traffic trends and daily details.
+- Replace README previews with four current screenshots and refresh installation and feature descriptions.
+
 ## 1.6.0 - 2026-10-01
 
 - Record serving bands and network modes through generic modem_ctrl/QModem data interfaces without a model/band allowlist.

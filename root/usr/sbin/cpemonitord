@@ -72,13 +72,16 @@ read_fan() {
 }
 
 read_modem() {
-	local j
+	local j modem_temp
 	j="$(ubus -t 10 call modem_ctrl info 2>/dev/null)"
-	MODEM_TEMP="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="temperature"].value' 2>/dev/null | head -1)"
+	modem_temp="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="temperature"].value' 2>/dev/null | head -1)"
 	RSRP="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="RSRP"].value' 2>/dev/null | head -1)"
 	RSRQ="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="RSRQ"].value' 2>/dev/null | head -1)"
 	SINR="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="SINR"].value' 2>/dev/null | head -1)"
-	MODEM_TEMP="$(num "$MODEM_TEMP")"; RSRP="$(num "$RSRP")"; RSRQ="$(num "$RSRQ")"; SINR="$(num "$SINR")"
+	modem_temp="$(num "$modem_temp")"
+	# Missing readings and the provider's -1 sentinel must not replace a valid temperature.
+	if [ -n "$modem_temp" ] && [ "$modem_temp" != -1 ]; then MODEM_TEMP=$modem_temp; fi
+	RSRP="$(num "$RSRP")"; RSRQ="$(num "$RSRQ")"; SINR="$(num "$SINR")"
 	[ -n "$MODEM_TEMP" ] || MODEM_TEMP=-1; [ -n "$RSRP" ] || RSRP=-999
 	[ -n "$RSRQ" ] || RSRQ=-999; [ -n "$SINR" ] || SINR=-999
 	local stamp tmp sections section cell port first=1
@@ -105,6 +108,7 @@ read_modem() {
 		fi
 	fi
 	if [ -s "$tmp" ]; then
+		ucode /usr/lib/cpemonitor/bands.uc retain "$RAM_DIR/band-current.json" < "$tmp" > "$RAM_DIR/band-retained.new" && mv "$RAM_DIR/band-retained.new" "$tmp"
 		mv "$tmp" "$RAM_DIR/band-current.json"
 		cat "$RAM_DIR/band-current.json" >> "$RAM_DIR/bands-$(date +%F).jsonl"
 	fi

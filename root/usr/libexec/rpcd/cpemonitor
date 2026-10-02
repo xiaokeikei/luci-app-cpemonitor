@@ -39,7 +39,11 @@ history() {
 daily() {
 	data_dir=$(uci -q get cpemonitor.main.data_dir); [ -n "$data_dir" ] || data_dir=/overlay/cpemonitor
 	printf '{"rows":['; first=1
-	{ tail -n 366 "$data_dir/daily.csv" 2>/dev/null; } | grep -v '^date' | while IFS=, read -r d rx tx total; do
+	{
+		cat "$data_dir/daily.csv" /tmp/cpemonitor/daily.csv 2>/dev/null
+		set -- $(cat /tmp/cpemonitor/current 2>/dev/null)
+		[ "$#" -ge 3 ] && printf '%s,%s,%s,%s\n' "$(date +%F)" "$2" "$3" "$(($2 + $3))"
+	} | awk -F, '$1 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ && $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ && $4 ~ /^[0-9]+$/ { rows[$1]=$0 } END { for (d in rows) print rows[d] }' | sort | while IFS=, read -r d rx tx total; do
 		[ -n "$d" ] || continue; [ "$first" = 1 ] || printf ','; first=0; printf '["%s",%s,%s,%s]' "$d" "$rx" "$tx" "$total"
 	done
 	printf ']}'

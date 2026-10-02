@@ -17,6 +17,7 @@ function segments(rows,start,end){
 		function add(a,b,name,known){a=Math.max(start,a);b=Math.min(end,b);if(b<=a)return;var last=list[list.length-1];if(last&&last.label===name&&last.end===a){last.end=b;return;}list.push({start:a,end:b,label:name,known:known});}
 		var cursor=start,previous=null;
 		points.forEach(function(p,i){
+			if((!p.m||p.m.status!=='known')&&previous&&previous.m&&previous.m.status==='known')p.m=previous.m;
 			if(p.t>cursor)add(cursor,p.t,'未采样',false);
 			var next=points[i+1],until=Math.min(end,next?next.t:end,p.t+p.interval*2.5),known=p.m&&p.m.status==='known',name=label(p.m);
 			add(p.t,until,name,known);cursor=Math.max(cursor,until);
@@ -27,7 +28,7 @@ function segments(rows,start,end){
 	});return result;
 }
 return baseclass.extend({
-	currentLabel:function(data){if(data&&data.timestamp&&Date.now()/1000-data.timestamp>(Number(data.interval)||60)*2.5)return '读取已过期（上次 '+time(data.timestamp)+'）';return (data&&data.modems||[]).map(function(m){return ((data.modems||[]).length>1?m.id+': ':'')+label(m);}).join('；')||'未知 / 接口未报告';},
+	currentLabel:function(data){return (data&&data.modems||[]).map(function(m){return ((data.modems||[]).length>1?m.id+': ':'')+label(m);}).join('；')||'未知 / 接口未报告';},
 	segments:segments,
 	render:function(data,start,end){
 		var rows=(data&&data.rows||[]).slice().sort(function(a,b){return a.timestamp-b.timestamp;}),tracks=segments(rows,start,end),nodes=[],events=[];
@@ -41,7 +42,7 @@ return baseclass.extend({
 		nodes.push(E('h4',{},'频段 / 网络模式变化记录'));
 		if(!events.length)nodes.push(E('p',{},'此范围内没有观察到连续有效采样之间的变化。'));
 		else nodes.push(E('div',{style:'max-height:280px;overflow:auto'},events.slice(0,100).map(function(e){return E('div',{style:'padding:7px;border-bottom:1px solid rgba(128,128,128,.2);font-size:12px'},time(e.t)+' · '+e.id+' · '+e.from+' → '+e.to);}))); 
-		nodes.push(E('p',{style:'font-size:12px;color:#888'},'仅记录接口报告的在用载波，不代表模组全部支持频段或完整聚合组合。灰色为未知或未采样；切换时间为采样发现时间，短暂切换可能漏记。最多显示最近 100 条变化。'));
+		nodes.push(E('p',{style:'font-size:12px;color:#888'},'仅记录接口报告的在用载波，不代表模组全部支持频段或完整聚合组合。读取失败时沿用上次有效频段；灰色为尚无有效信息或未采样。切换时间为采样发现时间，短暂切换可能漏记。最多显示最近 100 条变化。'));
 		return E('div',{class:'cbi-section',style:'padding:12px'},[E('h3',{},'在用频段历史')].concat(nodes));
 	}
 });

@@ -3,6 +3,7 @@ import json
 import pathlib
 import subprocess
 import sys
+import tempfile
 
 runtime = sys.argv[1] if len(sys.argv) > 1 else "ucode"
 parser = str(pathlib.Path(__file__).resolve().parents[1] / "root/usr/lib/cpemonitor/bands.uc")
@@ -20,3 +21,20 @@ for raw, expected in fixtures:
     result = json.loads(output)
     assert result["modems"][0]["bands"] == expected, result
 print("PASS: serving radio schemas, CA, ambiguous/unknown data and capability/neighbour exclusion")
+
+with tempfile.TemporaryDirectory() as folder:
+    cache = pathlib.Path(folder) / "previous.json"
+    previous = {"modems": [{"id": "m1", "status": "known", "bands": ["n41"]}]}
+    cache.write_text(json.dumps(previous))
+    for modems, expected in [
+        ([{"id": "m1", "status": "unknown", "bands": []}], ["n41"]),
+        ([], ["n41"]),
+        ([{"id": "m1", "status": "unavailable", "bands": []}], ["n41"]),
+        ([{"id": "m1", "status": "known", "bands": ["n28"]}], ["n28"]),
+    ]:
+        current = {"timestamp": 456, "interval": 60, "modems": modems}
+        output = subprocess.check_output([runtime, parser, "retain", str(cache)], input=json.dumps(current).encode())
+        result = json.loads(output)
+        assert result["timestamp"] == 456
+        assert result["modems"][0]["bands"] == expected, result
+print("PASS: cached readings survive missing/unknown/unavailable samples and refresh on success")

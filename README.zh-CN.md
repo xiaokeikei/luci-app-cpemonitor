@@ -81,7 +81,7 @@ v1.6.1 增加每日流量趋势和日期选择，保留上次有效频段与模�
 - 首次开启须在弹窗确认统计与运营商计费可能有偏差。采样间隔、突然断电和协议开销会导致误差；下载限速无法撤回已到达模组的数据，请留出额度余量。
 - 开启控制时每分钟保存累计检查点，正常停止时立即保存；突然断电仍可能丢失最近一分钟，关闭控制时沿用原持久化周期。
 - 控制开启期间暂停 MediaTek HNAT，关闭或停止服务时恢复原状态。若启用了防火墙流量分载或 WAN 存在其他 QoS 队列，会显示错误，请先停用冲突功能。
-- 依赖：tc-tiny、kmod-ifb、kmod-sched-core、nftables-json、BusyBox 的 flock 命令。限制默认关闭；未限制其他 WAN 设备。
+- 依赖：tc（tc-tiny 或 tc-full 均可）、kmod-ifb、kmod-sched-core、nftables-json、BusyBox 的 flock 命令。限制默认关闭；未限制其他 WAN 设备。
 - H5000M 实机 SSH 测试通过：WAN 双向 TBF/IFB 队列计数增长，100% 阻断、局域网管理保留、立即解除恢复联网，以及关闭后的 HNAT 恢复。
 
 ![月度额度设置与开启前的统计偏差确认](docs/images/quota-confirmation.png)

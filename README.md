@@ -81,7 +81,7 @@ Entry: "Settings" at the top → "Monthly quota" tab. Enable "Enable monthly quo
 - First-time enabling requires acknowledging in a dialog that local statistics may deviate from carrier billing. Sampling interval, sudden power loss and protocol overhead cause deviation; download throttling cannot retract traffic already received by the modem, so leave quota headroom.
 - While control is enabled, cumulative checkpoints are saved every minute and saved immediately on clean stop; a sudden power loss may still lose the last minute. When control is off, the normal persistence interval applies.
 - MediaTek HNAT is paused while control is active and restored when control is turned off or the service stops. If firewall flow offloading is enabled or another QoS queue exists on WAN, an error is shown — disable the conflicting feature first.
-- Dependencies: tc-tiny, kmod-ifb, kmod-sched-core, nftables-json, BusyBox flock. Limiting is off by default; other WAN devices are unaffected.
+- Dependencies: tc (tc-tiny or tc-full), kmod-ifb, kmod-sched-core, nftables-json, BusyBox flock. Limiting is off by default; other WAN devices are unaffected.
 - Verified on an H5000M over SSH: WAN bidirectional TBF/IFB queue counters grow, 100% blocking keeps LAN management, instant unlock restores connectivity, and HNAT is restored after disabling.
 
 ![Monthly quota settings and the accuracy acknowledgment dialog](docs/images/quota-confirmation.png)

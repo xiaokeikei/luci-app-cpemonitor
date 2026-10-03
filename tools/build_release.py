@@ -51,7 +51,7 @@ Section: luci
 Priority: optional
 Maintainer: xiaokeikei
 License: GPL-2.0-only
-Depends: luci-base, rpcd, jsonfilter, tc-tiny, kmod-ifb, kmod-sched-core, nftables-json, busybox, ucode, ucode-mod-fs
+Depends: luci-base, rpcd, jsonfilter, tc, kmod-ifb, kmod-sched-core, nftables-json, busybox, ucode, ucode-mod-fs
 """.encode()
 postinst = b'''#!/bin/sh
 [ -n "${IPKG_INSTROOT}" ] || {

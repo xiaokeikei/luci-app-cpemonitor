@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 LUCI_TITLE:=CPE traffic, system and 5G monitor for LuCI
 LUCI_DESCRIPTION:=Lightweight CPE monitoring with daily WAN traffic accounting, rolling and historical charts, system temperatures, cellular signal and dual latency probes.
-LUCI_DEPENDS:=+luci-base +rpcd +jsonfilter +tc-tiny +kmod-ifb +kmod-sched-core +nftables-json +ucode +ucode-mod-fs
+LUCI_DEPENDS:=+luci-base +rpcd +jsonfilter +tc +kmod-ifb +kmod-sched-core +nftables-json +ucode +ucode-mod-fs
 LUCI_PKGARCH:=all
 LUCI_MAINTAINER:=xiaokeikei
 

@@ -41,6 +41,8 @@ def source_bytes(path):
 root_files = [(p.relative_to(BASE / "root").as_posix(), source_bytes(p),
                0o755 if p.relative_to(BASE / "root").as_posix() in EXECUTABLES else 0o644)
               for p in sorted((BASE / "root").rglob("*")) if p.is_file()]
+htdocs_files = [("www/" + p.relative_to(BASE / "htdocs").as_posix(), source_bytes(p), 0o644)
+                for p in sorted((BASE / "htdocs").rglob("*")) if p.is_file()]
 control = f"""Package: luci-app-cpemonitor
 Version: {VERSION}-{RELEASE}
 Architecture: all
@@ -49,7 +51,7 @@ Section: luci
 Priority: optional
 Maintainer: xiaokeikei
 License: GPL-2.0-only
-Depends: luci-base, rpcd, jsonfilter, tc-tiny, kmod-ifb, kmod-sched-core, nftables-json, busybox, ucode, ucode-mod-fs
+Depends: luci-base, rpcd, jsonfilter, tc, kmod-ifb, kmod-sched-core, nftables-json, busybox, ucode, ucode-mod-fs
 """.encode()
 postinst = b'''#!/bin/sh
 [ -n "${IPKG_INSTROOT}" ] || {
@@ -74,13 +76,14 @@ exit 0
 '''
 control_tar = archive([("control", control, 0o644), ("conffiles", b"/etc/config/cpemonitor\n", 0o644),
                        ("postinst", postinst, 0o755), ("prerm", prerm, 0o755)])
-data_tar = archive(root_files)
+data_tar = archive(root_files + htdocs_files)
 # OpenWrt 24.10 ipkg-build uses a gzip-compressed tar outer container.
 ipk = archive([("debian-binary", b"2.0\n", 0o644),
                ("data.tar.gz", data_tar, 0o644), ("control.tar.gz", control_tar, 0o644)])
 (OUT / f"luci-app-cpemonitor_{VERSION}-{RELEASE}_all.ipk").write_bytes(ipk)
 
 payload = archive([("root/" + n, b, m) for n, b, m in root_files] +
+                  [("htdocs/" + n[len("www/"):], b, m) for n, b, m in htdocs_files] +
                   [("install.sh", source_bytes(BASE / "install.sh"), 0o755)])
 header = b'''#!/bin/sh
 set -e
@@ -95,7 +98,7 @@ __PAYLOAD__
 (OUT / f"luci-app-cpemonitor-{VERSION}-{RELEASE}.run").write_bytes(header + base64.encodebytes(payload))
 sources = [p for p in BASE.iterdir() if p.is_file() and p.suffix == ".md"]
 sources += [BASE / n for n in ["Makefile", "LICENSE", "install.sh", "uninstall.sh", ".gitignore"]]
-sources += [p for folder in ["root", "tools", "docs", "tests"] for p in (BASE / folder).rglob("*") if p.is_file() and "__pycache__" not in p.parts]
+sources += [p for folder in ["root", "htdocs", "po", "tools", "docs", "tests"] for p in (BASE / folder).rglob("*") if p.is_file() and "__pycache__" not in p.parts]
 with zipfile.ZipFile(OUT / f"luci-app-cpemonitor-{VERSION}-{RELEASE}-source.zip", "w", zipfile.ZIP_DEFLATED) as z:
     for p in sorted(sources):
         z.writestr("luci-app-cpemonitor/" + p.relative_to(BASE).as_posix(), source_bytes(p))

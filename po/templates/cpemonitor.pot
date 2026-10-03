@@ -1,0 +1,472 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Last-Translator: xiaokeikei\n"
+"Language-Team: none\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "CPE Monitor"
+msgstr ""
+
+msgid "Current Status"
+msgstr ""
+
+msgid "History"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Grant access to CPE monitor data and settings"
+msgstr ""
+
+msgid "Daily traffic"
+msgstr ""
+
+msgid "Date"
+msgstr ""
+
+msgid "Upload"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "10 min"
+msgstr ""
+
+msgid "Last 10 minutes"
+msgstr ""
+
+msgid "30 min"
+msgstr ""
+
+msgid "Last 30 minutes"
+msgstr ""
+
+msgid "1 hour"
+msgstr ""
+
+msgid "Last 1 hour"
+msgstr ""
+
+msgid "2 hours"
+msgstr ""
+
+msgid "Last 2 hours"
+msgstr ""
+
+msgid "5 hours"
+msgstr ""
+
+msgid "Last 5 hours"
+msgstr ""
+
+msgid "12 hours"
+msgstr ""
+
+msgid "Last 12 hours"
+msgstr ""
+
+msgid "Today"
+msgstr ""
+
+msgid "CPE Monitor · %s"
+msgstr ""
+
+msgid "Loading band records…"
+msgstr ""
+
+msgid "Failed to load monitoring data: %s"
+msgstr ""
+
+msgid "Loading…"
+msgstr ""
+
+msgid "No data in this time range"
+msgstr ""
+
+msgid "Load failed, please try again"
+msgstr ""
+
+msgid "Live speed (download blue / upload orange, %s)"
+msgstr ""
+
+msgid "Current download"
+msgstr ""
+
+msgid "Current upload"
+msgstr ""
+
+msgid "Traffic today"
+msgstr ""
+
+msgid "CPU / Memory"
+msgstr ""
+
+msgid "CPU / Modem temperature"
+msgstr ""
+
+msgid "Fan speed"
+msgstr ""
+
+msgid "Aliyun / Tencent latency"
+msgstr ""
+
+msgid "Bands in use (interface report)"
+msgstr ""
+
+msgid "Unlock until period end"
+msgstr ""
+
+msgid "Resume automatic limiting"
+msgstr ""
+
+msgid "Initializing monthly statistics…"
+msgstr ""
+
+msgid "Period %s to %s (exclusive) · Download %s / Upload %s / Total %s"
+msgstr ""
+
+msgid " · Quota %s / Remaining %s / Used %s%%"
+msgstr ""
+
+msgid "Quota limit is not enabled"
+msgstr ""
+
+msgid "Online normally; throttled after %s%%, WAN paused at 100%%"
+msgstr ""
+
+msgid "Throttled: download %s Mbps / upload %s Mbps"
+msgstr ""
+
+msgid "Quota reached; WAN access paused, LAN management still available"
+msgstr ""
+
+msgid "Limit lifted for this period; resumes automatically next billing cycle"
+msgstr ""
+
+msgid "Rules did not take effect: %s"
+msgstr ""
+
+msgid "Unknown error"
+msgstr ""
+
+msgid "Updating status…"
+msgstr ""
+
+msgid "Unlock for this period"
+msgstr ""
+
+msgid "Lift throttling and blocking immediately until the end of this period. Traffic keeps accumulating; overage may incur carrier charges."
+msgstr ""
+
+msgid "Re-apply quota throttling or blocking immediately; if usage already reached 100%, WAN access will be paused."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Operation failed: %s"
+msgstr ""
+
+msgid "Confirm"
+msgstr ""
+
+msgid "Monthly Traffic & Quota"
+msgstr ""
+
+msgid "Only recorded traffic is counted and may differ from carrier billing; billing day and quota can be adjusted on the settings page."
+msgstr ""
+
+msgid "Monitoring time range"
+msgstr ""
+
+msgid "Network latency (Aliyun green / Tencent blue)"
+msgstr ""
+
+msgid "System usage (CPU red / memory purple)"
+msgstr ""
+
+msgid "Device temperature and fan (CPU red / Wi-Fi blue / modem orange / fan green)"
+msgstr ""
+
+msgid "5G signal (RSRP red / RSRQ orange / SINR green)"
+msgstr ""
+
+msgid "Daily traffic trend"
+msgstr ""
+
+msgid "Daily traffic details"
+msgstr ""
+
+msgid "Memory"
+msgstr ""
+
+msgid "Modem"
+msgstr ""
+
+msgid "Fan"
+msgstr ""
+
+msgid "Aliyun"
+msgstr ""
+
+msgid "Tencent"
+msgstr ""
+
+msgid "No data for the selected period"
+msgstr ""
+
+msgid "Up/down throughput"
+msgstr ""
+
+msgid "Download (blue) / upload (orange), in Mbps"
+msgstr ""
+
+msgid "System usage"
+msgstr ""
+
+msgid "CPU (red) / memory (purple), in %"
+msgstr ""
+
+msgid "Device temperature and fan"
+msgstr ""
+
+msgid "CPU (red) / Wi-Fi (blue) / modem (orange), in °C; fan (green), in %"
+msgstr ""
+
+msgid "Network latency"
+msgstr ""
+
+msgid "Aliyun (green) / Tencent (blue), in ms"
+msgstr ""
+
+msgid "5G signal"
+msgstr ""
+
+msgid "RSRP (red) / RSRQ (orange) / SINR (green), in dB/dBm"
+msgstr ""
+
+msgid "Please select valid start and end times."
+msgstr ""
+
+msgid "Querying…"
+msgstr ""
+
+msgid "%s samples shown"
+msgstr ""
+
+msgid "Query failed"
+msgstr ""
+
+msgid "Query"
+msgstr ""
+
+msgid "Last hour"
+msgstr ""
+
+msgid "CPE Monitor · History"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "End"
+msgstr ""
+
+msgid "CPE Monitor Settings"
+msgstr ""
+
+msgid "The collection service restarts automatically after saving and applying."
+msgstr ""
+
+msgid "Monitor settings"
+msgstr ""
+
+msgid "Collection"
+msgstr ""
+
+msgid "Monthly quota"
+msgstr ""
+
+msgid "Enable"
+msgstr ""
+
+msgid "WAN device"
+msgstr ""
+
+msgid "Select an existing network device to avoid typing mistakes."
+msgstr ""
+
+msgid "Base sampling interval (s)"
+msgstr ""
+
+msgid "Modem sampling interval (s)"
+msgstr ""
+
+msgid "Persistence interval (s)"
+msgstr ""
+
+msgid "Retention (days)"
+msgstr ""
+
+msgid "Persistent data directory"
+msgstr ""
+
+msgid "Aliyun probe host"
+msgstr ""
+
+msgid "Tencent probe host"
+msgstr ""
+
+msgid "Ping count per probe"
+msgstr ""
+
+msgid "Ping timeout (s)"
+msgstr ""
+
+msgid "Live speed unit"
+msgstr ""
+
+msgid "Enable monthly quota limit"
+msgstr ""
+
+msgid "Counted as download + upload combined; throttled at the threshold, WAN paused at 100%. LAN management stays reachable."
+msgstr ""
+
+msgid "Confirm before enabling traffic limiting"
+msgstr ""
+
+msgid "Local statistics may differ from the carrier bill; sampling interval, sudden power loss, protocol overhead and previously unrecorded traffic all affect accuracy. Throttling or blocking may trigger early or late and cannot serve as billing basis."
+msgstr ""
+
+msgid "Enabling pauses HNAT hardware acceleration so rules take effect, which may lower peak performance. Download throttling cannot retract traffic already received by the modem. Please leave quota headroom; the limit can be lifted on the monitor page until the period ends."
+msgstr ""
+
+msgid "I understand, enable anyway"
+msgstr ""
+
+msgid "Please acknowledge the accuracy notice first"
+msgstr ""
+
+msgid "Traffic quota per period (GB)"
+msgstr ""
+
+msgid "Positive integer; 1 GB = 1,000,000,000 bytes, download + upload combined."
+msgstr ""
+
+msgid "Throttle at this percentage"
+msgstr ""
+
+msgid "Download speed after throttling (Mbps)"
+msgstr ""
+
+msgid "Upload speed after throttling (Mbps)"
+msgstr ""
+
+msgid "Billing day of month"
+msgstr ""
+
+msgid "Defaults to midnight on the 1st of each month, in router local time. Only traffic actually recorded by the plugin is counted; totals are re-aggregated after the billing day changes."
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "Not connected / unreadable"
+msgstr ""
+
+msgid "Unknown / not reported"
+msgstr ""
+
+msgid "No sample"
+msgstr ""
+
+msgid "No band records in the selected period; data from before the update cannot be reconstructed."
+msgstr ""
+
+msgid "Too many records; only the last 5000 observations are shown. Narrow the query range."
+msgstr ""
+
+msgid "Band / network mode changes"
+msgstr ""
+
+msgid "No changes between consecutive valid samples observed in this range."
+msgstr ""
+
+msgid "Only serving carriers reported by the interface are recorded; this does not represent all bands supported by the modem or the full aggregation set. The last valid bands are kept when reading fails; grey means no valid information or no sample. Switch times are detection times, so brief switches may be missed. At most the latest 100 changes are shown."
+msgstr ""
+
+msgid "Bands in use history"
+msgstr ""
+
+msgid "Traffic start date"
+msgstr ""
+
+msgid "Traffic end date"
+msgstr ""
+
+msgid "Daily upload, download and total traffic chart"
+msgstr ""
+
+msgid "Move the mouse or touch the chart to inspect daily traffic"
+msgstr ""
+
+msgid "Traffic (GB)"
+msgstr ""
+
+msgid "%s days shown (today counts up to now)"
+msgstr ""
+
+msgid "No records in this range"
+msgstr ""
+
+msgid "Please select valid dates"
+msgstr ""
+
+msgid "Start date must not be after end date"
+msgstr ""
+
+msgid "Last month"
+msgstr ""
+
+msgid "Invalid action"
+msgstr ""
+
+msgid "Quota, threshold, rates and billing day must be positive integers"
+msgstr ""
+
+msgid "Quota parameters are out of range"
+msgstr ""
+
+msgid "Select a dedicated WAN device; LAN devices cannot be limited"
+msgstr ""
+
+msgid "Disable firewall software/hardware flow offloading first, or quota control may be bypassed"
+msgstr ""
+
+msgid "Unable to disable HNAT hardware acceleration"
+msgstr ""
+
+msgid "Another QoS queue exists on WAN; disable other shaping plugins first"
+msgstr ""
+
+msgid "Another ingress QoS rule exists on WAN"
+msgstr ""
+
+msgid "Cannot create download shaping device; please install kmod-ifb"
+msgstr ""
+
+msgid "Failed to apply shaping rules; check tc and scheduler modules"
+msgstr ""
+
+msgid "Failed to apply blocking rules; check nftables"
+msgstr ""

@@ -1,110 +1,112 @@
-# CPE Monitor for ImmortalWrt — CPE 网络监控插件
+# CPE Monitor for ImmortalWrt — CPE network monitoring plugin
 
-面向 Hiveton H5000M / ImmortalWrt 24.10 的轻量 CPE 网络监控插件，集中查看网速、延迟、系统状态、模组信号与频段，并统计每日流量。支持历史查询和可选的月度额度控制。
+[中文](README.zh-CN.md) | English
 
-当前版本：**v1.6.1**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
+A lightweight CPE network monitoring plugin for Hiveton H5000M / ImmortalWrt 24.10. It shows speed, latency, system status, modem signal and bands in one place, and accounts daily traffic. Historical queries and an optional monthly quota control are supported.
 
-## 实时监控
+Current version: **v1.6.1**. Installers and sources are on [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest).
 
-监控页按网速、网络延迟、系统使用率、设备温度与风扇、5G 信号、在用频段、每日流量趋势、每日流量明细排列。当前状态卡片每 10 秒刷新；图表可切换最近 10 分钟、半小时、1/2/5/12 小时或当天。
+## Live monitoring
 
-![实时监控：状态卡片、网速、延迟、系统使用率与温度](docs/images/current-monitor.png)
+The monitor page is laid out with speed, network latency, system usage, device temperature and fan, 5G signal, bands in use, daily traffic trend and daily traffic details. Status cards refresh every 10 seconds; charts can switch between the last 10 minutes, 30 minutes, 1/2/5/12 hours or today.
 
-## 频段与流量统计
+![Live monitoring: status cards, speed, latency, system usage and temperature](docs/images/current-monitor.png)
 
-频段和模组温度本次读取失败时保留上一次有效值，获取成功后再刷新；从未获取到有效信息时仍显示未知。频段历史展示每个模组的在用载波与网络模式变化。
+## Bands and traffic statistics
 
-每日流量趋势提供上传、下载、总流量三条曲线，横轴日期、纵轴流量（GB）。默认最近一个月，可手动选择任意起止日期，包含起止当天。鼠标悬停或轻触图表可查看当天数值；缺少记录的日期不会补成零。
+When a band or modem temperature read fails, the last valid value is retained and refreshed on the next successful read; before any valid data is seen the display stays unknown. Band history shows each modem's serving carriers and network mode changes.
 
-今天的流量为截至当前的累计值，图表及明细每分钟刷新。日期选择只控制流量趋势，独立于顶部监控时间范围；下方明细展示最近 31 天。可查询范围取决于实际保留的每日记录。
+The daily traffic trend offers upload, download and total curves, date on the X axis and traffic (GB) on the Y axis. It defaults to the last month; any start and end date can be picked, both inclusive. Hover or touch the chart to inspect a day's value; days without records are not back-filled with zeros.
 
-![频段历史、每日上传下载总流量折线图与每日明细](docs/images/current-traffic.png)
+Today's traffic is the running total so far, and both chart and table refresh every minute. The date picker only controls the traffic trend and is independent of the monitoring time range on top; the table below shows the latest 31 days. The queryable range depends on the retained daily records.
 
-## 指标
+![Band history, daily upload/download/total traffic chart and daily details](docs/images/current-traffic.png)
 
-- WAN 每日上行、下行及总流量（零点结算）
-- 实时上行/下行速度
-- CPU、内存、根分区使用率与系统负载
-- CPU、Wi-Fi、FM160 模组温度及风扇 PWM 转速百分比
-- 阿里云/腾讯云延迟和丢包
-- 5G RSRP、RSRQ、SINR、网络制式及频段
+## Metrics
 
-原始样本先写入 `/tmp/cpemonitor`，默认每 6 小时批量同步到持久存储，减少闪存写放大。每日流量状态也在同步时建立检查点。
+- WAN daily upload, download and total traffic (settled at midnight)
+- Live upload/download speed
+- CPU, memory, root partition usage and system load
+- CPU, Wi-Fi, FM160 modem temperature and fan PWM percentage
+- Aliyun/Tencent latency and packet loss
+- 5G RSRP, RSRQ, SINR, network mode and bands
 
-## 安装
+Raw samples are first written to `/tmp/cpemonitor` and synced to persistent storage every 6 hours by default to reduce flash wear. Daily traffic state is also checkpointed during sync.
 
-推荐下载 Release 中的 IPK 安装或升级：
+## Installation
+
+Installing or upgrading from the release IPK is recommended:
 
 ```sh
 opkg install ./luci-app-cpemonitor_1.6.1-1_all.ipk
 ```
 
-也可使用自解压安装包，执行 `sh luci-app-cpemonitor-1.6.1-1.run`（需预先安装依赖）。
-升级后若页面仍显示旧版，请按 **Ctrl+F5** 强制刷新浏览器缓存。
+A self-extracting installer is also available: run `sh luci-app-cpemonitor-1.6.1-1.run` (dependencies must be installed first).
+If the page still shows an old version after upgrading, press **Ctrl+F5** to force-refresh the browser cache.
 
-上传并解压后，在插件目录执行：
+After uploading and extracting, run inside the plugin directory:
 
 ```sh
 chmod +x install.sh
 ./install.sh
 ```
 
-LuCI 菜单：`状态 → CPE 监控`。
+LuCI menu: `Status → CPE Monitor`.
 
-顶部提供“现在状态”“历史查询”“设置”入口；每日流量表按“日期、上传、下载、总流量”显示。
+The top provides "Current Status", "History" and "Settings" entries; the daily traffic table shows date, upload, download and total.
 
-- `CPE 监控`：默认滚动显示最近 10 分钟，标题栏可切换最近半小时、1/2/5/12 小时及当天（零点至当前）；所有监控图表同步切换，自动刷新保留所选范围
-- `历史查询`：按日期和起止时间查询，长时间段自动抽样
+- `CPE Monitor`: shows the last 10 minutes by default; the title bar switches to the last 30 minutes, 1/2/5/12 hours or today (midnight to now). All charts switch together and auto-refresh keeps the selected range
+- `History`: queries by date and start/end time, with automatic downsampling over long spans
 
-时间按钮会同步切换速率、CPU/内存、温度/风扇、网络延迟和 5G 信号图表。
-当天范围使用浏览器本地时间零点；当前状态卡片始终显示最新值，每日流量表不受筛选影响。
-长时间范围由后端自动抽样，最多约 1200 个点；没有采集到的数据不会补齐。
+The time buttons switch the speed, CPU/memory, temperature/fan, latency and 5G signal charts together.
+The "today" range uses browser-local midnight; status cards always show the latest values and the daily traffic table is unaffected by the filter.
+Long ranges are downsampled by the backend to about 1200 points; unsampled gaps are not filled.
 
-## 更新记录
+## Changelog
 
-v1.6.1 增加每日流量趋势和日期选择，保留上次有效频段与模组温度，调整监控页顺序，并在未启用额度控制时隐藏控制区域。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+v1.6.1 adds the daily traffic trend with date selection, retains the last valid bands and modem temperature, reorders the monitor page, and hides the quota section when quota control is disabled. See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
-## 打包
+## Packaging
 
-在源码目录运行 `python tools/build_release.py`（Python 3），产物输出到上一级的对应 `versions/` 目录，包括 IPK、自解压安装包、源码 ZIP 和 SHA256 校验文件。
+Run `python tools/build_release.py` (Python 3) in the source directory; artifacts are written to the sibling `versions/` directory, including the IPK, the self-extracting installer, a source ZIP and a SHA256 checksum file.
 
-## 月流量与额度控制
+## Monthly traffic & quota control
 
-入口：页面顶部“设置” → “月流量与额度控制”选项卡。勾选“开启月度额度限制”，确认偏差提示后填写额度、阈值和速率，最后“保存并应用”。未开启时，监控页隐藏月流量与额度控制区域；设置页仍可随时开启。
+Entry: "Settings" at the top → "Monthly quota" tab. Enable "Enable monthly quota limit", acknowledge the accuracy notice, fill in quota, threshold and rates, then "Save & Apply". When disabled, the monitor page hides the monthly traffic and quota section; it can be enabled anytime on the settings page.
 
-- 展示本期下载、上传、合计、额度、剩余和使用百分比；沿用实际采集的每日累计，未采集的历史流量不能补算。
-- 设置页可填写整数 GB 额度、限速阈值（1–99%）、下载/上传 Mbps，以及每月账单日（1–28，默认 1 日）。1 GB = 1,000,000,000 字节。
-- 达到阈值使用 tc/TBF + IFB 双向限速；100% 后通过独立 nftables 表暂停选定 WAN 的 IPv4/IPv6 数据流量，局域网管理仍可访问，DHCP/IPv6 邻居发现保留。
-- 监控页可立即解除限制至本期结束，或恢复自动限制；豁免保存在持久目录，重启后继续有效，下期自动失效。
-- 首次开启须在弹窗确认统计与运营商计费可能有偏差。采样间隔、突然断电和协议开销会导致误差；下载限速无法撤回已到达模组的数据，请留出额度余量。
-- 开启控制时每分钟保存累计检查点，正常停止时立即保存；突然断电仍可能丢失最近一分钟，关闭控制时沿用原持久化周期。
-- 控制开启期间暂停 MediaTek HNAT，关闭或停止服务时恢复原状态。若启用了防火墙流量分载或 WAN 存在其他 QoS 队列，会显示错误，请先停用冲突功能。
-- 依赖：tc-tiny、kmod-ifb、kmod-sched-core、nftables-json、BusyBox 的 flock 命令。限制默认关闭；未限制其他 WAN 设备。
-- H5000M 实机 SSH 测试通过：WAN 双向 TBF/IFB 队列计数增长，100% 阻断、局域网管理保留、立即解除恢复联网，以及关闭后的 HNAT 恢复。
+- Shows period download, upload, total, quota, remaining and usage percent; based on actually recorded daily counters — unrecorded history cannot be reconstructed.
+- The settings page accepts an integer GB quota, throttle threshold (1–99%), download/upload Mbps, and billing day of month (1–28, default 1). 1 GB = 1,000,000,000 bytes.
+- At the threshold, tc/TBF + IFB applies bidirectional shaping; at 100% a dedicated nftables table pauses IPv4/IPv6 data on the selected WAN while LAN management stays reachable and DHCP/IPv6 neighbour discovery is preserved.
+- The monitor page can lift the limit until period end or resume automatic limiting; the override is stored in the persistent directory, survives reboots and expires automatically next period.
+- First-time enabling requires acknowledging in a dialog that local statistics may deviate from carrier billing. Sampling interval, sudden power loss and protocol overhead cause deviation; download throttling cannot retract traffic already received by the modem, so leave quota headroom.
+- While control is enabled, cumulative checkpoints are saved every minute and saved immediately on clean stop; a sudden power loss may still lose the last minute. When control is off, the normal persistence interval applies.
+- MediaTek HNAT is paused while control is active and restored when control is turned off or the service stops. If firewall flow offloading is enabled or another QoS queue exists on WAN, an error is shown — disable the conflicting feature first.
+- Dependencies: tc (tc-tiny or tc-full), kmod-ifb, kmod-sched-core, nftables-json, BusyBox flock. Limiting is off by default; other WAN devices are unaffected.
+- Verified on an H5000M over SSH: WAN bidirectional TBF/IFB queue counters grow, 100% blocking keeps LAN management, instant unlock restores connectivity, and HNAT is restored after disabling.
 
-![月度额度设置与开启前的统计偏差确认](docs/images/quota-confirmation.png)
+![Monthly quota settings and the accuracy acknowledgment dialog](docs/images/quota-confirmation.png)
 
-## 采集设置
+## Collection settings
 
-在“设置 → 采集设置”中选择 WAN 设备、采样周期、持久目录、探测地址和显示单位。保存并应用后采集服务会自动重启。
+Under "Settings → Collection", pick the WAN device, sampling periods, persistent directory, probe hosts and display unit. The collection service restarts automatically after saving and applying.
 
-![采集设置：WAN 设备、采样与持久化周期、探测地址及速率单位](docs/images/collection-settings.png)
+![Collection settings: WAN device, sampling and persistence periods, probe hosts and speed unit](docs/images/collection-settings.png)
 
-### 默认值
+### Defaults
 
-- 基础采样：10 秒
-- 模组采样：60 秒（AT/ubus 查询较重）
-- 持久化：6 小时
-- 保留：365 天
-- WAN 接口：`wwan0`
-- 持久目录：`/overlay/cpemonitor`
+- Base sampling: 10 seconds
+- Modem sampling: 60 seconds (AT/ubus queries are heavy)
+- Persistence: 6 hours
+- Retention: 365 days
+- WAN interface: `wwan0`
+- Persistent directory: `/overlay/cpemonitor`
 
-所有周期、接口、探测地址和保留天数均可在 LuCI 设置页修改。
+All periods, the interface, probe hosts and retention days can be changed on the LuCI settings page.
 
-## 在用频段记录
+## Bands in use recording
 
-通过 modem_ctrl / QModem 的通用数据接口记录采样时实际使用的频段和网络模式；不限定模组或频段列表。NR 使用 n 前缀，LTE 使用 B 前缀，WCDMA 使用 W 前缀；仅记录接口能识别的在用载波，首次缺少信息时显示未知，之后读取失败则沿用上一次有效频段。
+The bands and network mode in use at each sample are recorded through the generic modem_ctrl / QModem data interfaces; no modem or band list is hardcoded. NR uses the `n` prefix, LTE `B`, WCDMA `W`. Only serving carriers reported by the interface are recorded; the first reading without information shows unknown, and later read failures keep the last valid bands.
 
-当前状态卡片显示最新频段；实时页和历史页展示每个模组的时间条与变化记录。辅载波只有接口报告时才记录，不声称覆盖完整聚合组合。能力列表、锁频列表及邻区不计入使用记录。灰色表示尚无有效信息或未采样；读取失败时延续上一次有效频段，变化时间为采样发现时间。
+The status card shows the latest bands; the live and history pages show a timeline bar and change log per modem. Secondary carriers are recorded only when the interface reports them — no claim of covering the full aggregation set. Capability lists, locked band lists and neighbour cells are never counted. Grey means no valid information or no sample; on read failure the last valid bands are kept and change times are detection times.
 
-沿用模组采样周期（默认 60 秒），缓存在 RAM 后按持久化周期保存，正常停止时保存；突然断电可能丢失尚未持久化记录。旧数据不能补算，频段历史最多返回最近 5000 次观察。无兼容管理接口的模组仍可使用其他监控功能，但频段显示未知；不直接发送厂商 AT 命令。新增依赖 ucode、ucode-mod-fs。
+Recording follows the modem sampling period (default 60 seconds), is cached in RAM, saved on the persistence interval and on clean stop; a sudden power loss may lose records not yet persisted. Old data cannot be reconstructed, and band history returns at most the last 5000 observations. Modems without a compatible management interface still get all other monitoring features, but bands show unknown; no vendor AT commands are sent directly. Additional dependencies: ucode, ucode-mod-fs.

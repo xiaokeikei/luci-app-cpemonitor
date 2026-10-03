@@ -1,9 +1,8 @@
 {
 	"admin/status/cpemonitor/settings": {
-		"title": "设置",
+		"title": "Settings",
 		"order": 10,
 		"action": { "type": "view", "path": "cpemonitor/settings" },
 		"depends": { "acl": [ "luci-app-cpemonitor" ] }
 	}
 }
-

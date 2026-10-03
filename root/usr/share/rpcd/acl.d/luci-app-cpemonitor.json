@@ -1,6 +1,6 @@
 {
 	"luci-app-cpemonitor": {
-		"description": "访问 CPE 监控数据和设置",
+		"description": "Grant access to CPE monitor data and settings",
 		"read": { "ubus": { "cpemonitor": [ "current", "history", "daily", "monthly", "radio", "band_history" ] }, "uci": [ "cpemonitor" ] },
 		"write": { "ubus": { "cpemonitor": [ "quota_action" ] }, "uci": [ "cpemonitor" ] }
 	}

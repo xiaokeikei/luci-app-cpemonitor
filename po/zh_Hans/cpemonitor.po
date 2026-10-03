@@ -1,0 +1,472 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Last-Translator: xiaokeikei\n"
+"Language-Team: none\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "CPE Monitor"
+msgstr "CPE 监控"
+
+msgid "Current Status"
+msgstr "现在状态"
+
+msgid "History"
+msgstr "历史查询"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Grant access to CPE monitor data and settings"
+msgstr "访问 CPE 监控数据和设置"
+
+msgid "Daily traffic"
+msgstr "每日流量"
+
+msgid "Date"
+msgstr "日期"
+
+msgid "Upload"
+msgstr "上传"
+
+msgid "Download"
+msgstr "下载"
+
+msgid "Total"
+msgstr "总流量"
+
+msgid "10 min"
+msgstr "10分钟"
+
+msgid "Last 10 minutes"
+msgstr "最近 10 分钟"
+
+msgid "30 min"
+msgstr "半小时"
+
+msgid "Last 30 minutes"
+msgstr "最近半小时"
+
+msgid "1 hour"
+msgstr "1小时"
+
+msgid "Last 1 hour"
+msgstr "最近 1 小时"
+
+msgid "2 hours"
+msgstr "2小时"
+
+msgid "Last 2 hours"
+msgstr "最近 2 小时"
+
+msgid "5 hours"
+msgstr "5小时"
+
+msgid "Last 5 hours"
+msgstr "最近 5 小时"
+
+msgid "12 hours"
+msgstr "12小时"
+
+msgid "Last 12 hours"
+msgstr "最近 12 小时"
+
+msgid "Today"
+msgstr "今天"
+
+msgid "CPE Monitor · %s"
+msgstr "CPE 监控 · %s"
+
+msgid "Loading band records…"
+msgstr "正在读取频段记录…"
+
+msgid "Failed to load monitoring data: %s"
+msgstr "加载监控数据失败：%s"
+
+msgid "Loading…"
+msgstr "加载中…"
+
+msgid "No data in this time range"
+msgstr "此时间范围暂无数据"
+
+msgid "Load failed, please try again"
+msgstr "加载失败，请重试"
+
+msgid "Live speed (download blue / upload orange, %s)"
+msgstr "实时速率（下载蓝 / 上传橙，%s）"
+
+msgid "Current download"
+msgstr "当前下载"
+
+msgid "Current upload"
+msgstr "当前上传"
+
+msgid "Traffic today"
+msgstr "今日总流量"
+
+msgid "CPU / Memory"
+msgstr "CPU / 内存"
+
+msgid "CPU / Modem temperature"
+msgstr "CPU / 模组温度"
+
+msgid "Fan speed"
+msgstr "风扇转速"
+
+msgid "Aliyun / Tencent latency"
+msgstr "阿里 / 腾讯延迟"
+
+msgid "Bands in use (interface report)"
+msgstr "当前在用频段（接口报告）"
+
+msgid "Unlock until period end"
+msgstr "解除限制至本期结束"
+
+msgid "Resume automatic limiting"
+msgstr "恢复自动限制"
+
+msgid "Initializing monthly statistics…"
+msgstr "月流量统计初始化中…"
+
+msgid "Period %s to %s (exclusive) · Download %s / Upload %s / Total %s"
+msgstr "本期 %s 至 %s（不含结束日） · 下载 %s / 上传 %s / 合计 %s"
+
+msgid " · Quota %s / Remaining %s / Used %s%%"
+msgstr " · 额度 %s / 剩余 %s / 已用 %s%%"
+
+msgid "Quota limit is not enabled"
+msgstr "未开启额度限制"
+
+msgid "Online normally; throttled after %s%%, WAN paused at 100%%"
+msgstr "正常联网；达到 %s%% 后限速，100%% 暂停 WAN"
+
+msgid "Throttled: download %s Mbps / upload %s Mbps"
+msgstr "已限速：下载 %s Mbps / 上传 %s Mbps"
+
+msgid "Quota reached; WAN access paused, LAN management still available"
+msgstr "已达到额度，WAN 联网暂停；局域网管理可用"
+
+msgid "Limit lifted for this period; resumes automatically next billing cycle"
+msgstr "本期限制已解除，下个账单周期自动恢复"
+
+msgid "Rules did not take effect: %s"
+msgstr "规则未正常生效：%s"
+
+msgid "Unknown error"
+msgstr "未知错误"
+
+msgid "Updating status…"
+msgstr "状态更新中"
+
+msgid "Unlock for this period"
+msgstr "解除本期限制"
+
+msgid "Lift throttling and blocking immediately until the end of this period. Traffic keeps accumulating; overage may incur carrier charges."
+msgstr "立即解除限速和断网，直到本期结束。流量仍继续累计；超额可能产生运营商费用。"
+
+msgid "Re-apply quota throttling or blocking immediately; if usage already reached 100%, WAN access will be paused."
+msgstr "立即重新按额度执行限速或断网；如果已达到 100%，WAN 将暂停联网。"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Operation failed: %s"
+msgstr "操作失败：%s"
+
+msgid "Confirm"
+msgstr "确认"
+
+msgid "Monthly Traffic & Quota"
+msgstr "月流量与额度控制"
+
+msgid "Only recorded traffic is counted and may differ from carrier billing; billing day and quota can be adjusted on the settings page."
+msgstr "仅统计已采集流量，与运营商计费可能存在偏差；账单周期和额度可在设置页调整。"
+
+msgid "Monitoring time range"
+msgstr "监控时间范围"
+
+msgid "Network latency (Aliyun green / Tencent blue)"
+msgstr "网络延迟（阿里绿 / 腾讯蓝）"
+
+msgid "System usage (CPU red / memory purple)"
+msgstr "系统使用率（CPU 红 / 内存紫）"
+
+msgid "Device temperature and fan (CPU red / Wi-Fi blue / modem orange / fan green)"
+msgstr "设备温度与风扇（CPU 红 / Wi-Fi 蓝 / 模组橙 / 风扇绿）"
+
+msgid "5G signal (RSRP red / RSRQ orange / SINR green)"
+msgstr "5G 信号（RSRP 红 / RSRQ 橙 / SINR 绿）"
+
+msgid "Daily traffic trend"
+msgstr "每日流量趋势"
+
+msgid "Daily traffic details"
+msgstr "每日流量明细"
+
+msgid "Memory"
+msgstr "内存"
+
+msgid "Modem"
+msgstr "模组"
+
+msgid "Fan"
+msgstr "风扇"
+
+msgid "Aliyun"
+msgstr "阿里云"
+
+msgid "Tencent"
+msgstr "腾讯云"
+
+msgid "No data for the selected period"
+msgstr "所选时间段暂无数据"
+
+msgid "Up/down throughput"
+msgstr "上下行速率"
+
+msgid "Download (blue) / upload (orange), in Mbps"
+msgstr "下载（蓝）/ 上传（橙），单位 Mbps"
+
+msgid "System usage"
+msgstr "系统使用率"
+
+msgid "CPU (red) / memory (purple), in %"
+msgstr "CPU（红）/ 内存（紫），单位 %"
+
+msgid "Device temperature and fan"
+msgstr "设备温度与风扇"
+
+msgid "CPU (red) / Wi-Fi (blue) / modem (orange), in °C; fan (green), in %"
+msgstr "CPU（红）/ Wi-Fi（蓝）/ 模组（橙），单位 °C；风扇（绿），单位 %"
+
+msgid "Network latency"
+msgstr "网络延迟"
+
+msgid "Aliyun (green) / Tencent (blue), in ms"
+msgstr "阿里云（绿）/ 腾讯云（蓝），单位 ms"
+
+msgid "5G signal"
+msgstr "5G 信号"
+
+msgid "RSRP (red) / RSRQ (orange) / SINR (green), in dB/dBm"
+msgstr "RSRP（红）/ RSRQ（橙）/ SINR（绿），单位 dB/dBm"
+
+msgid "Please select valid start and end times."
+msgstr "请选择有效的开始和结束时间。"
+
+msgid "Querying…"
+msgstr "正在查询…"
+
+msgid "%s samples shown"
+msgstr "显示 %s 个采样点"
+
+msgid "Query failed"
+msgstr "查询失败"
+
+msgid "Query"
+msgstr "查询"
+
+msgid "Last hour"
+msgstr "最近1小时"
+
+msgid "CPE Monitor · History"
+msgstr "CPE 监控 · 历史查询"
+
+msgid "Start"
+msgstr "开始"
+
+msgid "End"
+msgstr "结束"
+
+msgid "CPE Monitor Settings"
+msgstr "CPE 监控设置"
+
+msgid "The collection service restarts automatically after saving and applying."
+msgstr "保存并应用后，采集服务会自动重启。"
+
+msgid "Monitor settings"
+msgstr "监控设置"
+
+msgid "Collection"
+msgstr "采集设置"
+
+msgid "Monthly quota"
+msgstr "月流量与额度控制"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "WAN device"
+msgstr "WAN 设备"
+
+msgid "Select an existing network device to avoid typing mistakes."
+msgstr "从当前系统网络设备中选择，避免手工输入错误。"
+
+msgid "Base sampling interval (s)"
+msgstr "基础采样间隔（秒）"
+
+msgid "Modem sampling interval (s)"
+msgstr "模组采样间隔（秒）"
+
+msgid "Persistence interval (s)"
+msgstr "持久化间隔（秒）"
+
+msgid "Retention (days)"
+msgstr "保留天数"
+
+msgid "Persistent data directory"
+msgstr "持久数据目录"
+
+msgid "Aliyun probe host"
+msgstr "阿里云探测地址"
+
+msgid "Tencent probe host"
+msgstr "腾讯云探测地址"
+
+msgid "Ping count per probe"
+msgstr "每次 Ping 包数"
+
+msgid "Ping timeout (s)"
+msgstr "Ping 超时（秒）"
+
+msgid "Live speed unit"
+msgstr "实时速率显示单位"
+
+msgid "Enable monthly quota limit"
+msgstr "开启月度额度限制"
+
+msgid "Counted as download + upload combined; throttled at the threshold, WAN paused at 100%. LAN management stays reachable."
+msgstr "按下载＋上传合计计量；达到阈值限速，100% 暂停 WAN 联网，局域网管理仍可访问。"
+
+msgid "Confirm before enabling traffic limiting"
+msgstr "开启流量限制前请确认"
+
+msgid "Local statistics may differ from the carrier bill; sampling interval, sudden power loss, protocol overhead and previously unrecorded traffic all affect accuracy. Throttling or blocking may trigger early or late and cannot serve as billing basis."
+msgstr "本机统计与运营商账单可能存在偏差；采样间隔、突然断电、协议开销和未记录的历史流量都会影响结果。限速或断网可能提前或延后触发，不能作为运营商计费依据。"
+
+msgid "Enabling pauses HNAT hardware acceleration so rules take effect, which may lower peak performance. Download throttling cannot retract traffic already received by the modem. Please leave quota headroom; the limit can be lifted on the monitor page until the period ends."
+msgstr "开启后暂停 HNAT 硬件加速以保证规则生效，峰值性能可能降低。下载限速也不能撤回已经到达模组的流量。请留出额度余量；可随时在监控页解除到本期结束。"
+
+msgid "I understand, enable anyway"
+msgstr "了解偏差，继续开启"
+
+msgid "Please acknowledge the accuracy notice first"
+msgstr "请先确认统计偏差提示"
+
+msgid "Traffic quota per period (GB)"
+msgstr "每期流量额度（GB）"
+
+msgid "Positive integer; 1 GB = 1,000,000,000 bytes, download + upload combined."
+msgstr "正整数；1 GB = 1,000,000,000 字节，下载＋上传合计。"
+
+msgid "Throttle at this percentage"
+msgstr "达到多少百分比开始限速"
+
+msgid "Download speed after throttling (Mbps)"
+msgstr "限速后下载速度（Mbps）"
+
+msgid "Upload speed after throttling (Mbps)"
+msgstr "限速后上传速度（Mbps）"
+
+msgid "Billing day of month"
+msgstr "每月账单起始日"
+
+msgid "Defaults to midnight on the 1st of each month, in router local time. Only traffic actually recorded by the plugin is counted; totals are re-aggregated after the billing day changes."
+msgstr "默认每月 1 日零点；按路由器本地时间计算。仅统计插件实际记录的流量，账单周期变化后重新汇总。"
+
+msgid "Unknown"
+msgstr "未知"
+
+msgid "Not connected / unreadable"
+msgstr "未连接 / 无法读取"
+
+msgid "Unknown / not reported"
+msgstr "未知 / 接口未报告"
+
+msgid "No sample"
+msgstr "未采样"
+
+msgid "No band records in the selected period; data from before the update cannot be reconstructed."
+msgstr "所选时间段暂无频段记录；更新前的数据无法补算。"
+
+msgid "Too many records; only the last 5000 observations are shown. Narrow the query range."
+msgstr "记录较多，仅展示最近 5000 次观察；请缩短查询范围。"
+
+msgid "Band / network mode changes"
+msgstr "频段 / 网络模式变化记录"
+
+msgid "No changes between consecutive valid samples observed in this range."
+msgstr "此范围内没有观察到连续有效采样之间的变化。"
+
+msgid "Only serving carriers reported by the interface are recorded; this does not represent all bands supported by the modem or the full aggregation set. The last valid bands are kept when reading fails; grey means no valid information or no sample. Switch times are detection times, so brief switches may be missed. At most the latest 100 changes are shown."
+msgstr "仅记录接口报告的在用载波，不代表模组全部支持频段或完整聚合组合。读取失败时沿用上次有效频段；灰色为尚无有效信息或未采样。切换时间为采样发现时间，短暂切换可能漏记。最多显示最近 100 条变化。"
+
+msgid "Bands in use history"
+msgstr "在用频段历史"
+
+msgid "Traffic start date"
+msgstr "流量开始日期"
+
+msgid "Traffic end date"
+msgstr "流量结束日期"
+
+msgid "Daily upload, download and total traffic chart"
+msgstr "每日上传、下载及总流量折线图"
+
+msgid "Move the mouse or touch the chart to inspect daily traffic"
+msgstr "移动鼠标或轻触图表查看每日流量"
+
+msgid "Traffic (GB)"
+msgstr "流量（GB）"
+
+msgid "%s days shown (today counts up to now)"
+msgstr "显示 %s 天记录（今天为截至当前的累计量）"
+
+msgid "No records in this range"
+msgstr "此时间范围暂无记录"
+
+msgid "Please select valid dates"
+msgstr "请选择有效日期"
+
+msgid "Start date must not be after end date"
+msgstr "开始日期不能晚于结束日期"
+
+msgid "Last month"
+msgstr "最近一个月"
+
+msgid "Invalid action"
+msgstr "无效操作"
+
+msgid "Quota, threshold, rates and billing day must be positive integers"
+msgstr "额度、阈值、速率和账单日必须为正整数"
+
+msgid "Quota parameters are out of range"
+msgstr "额度控制参数超出有效范围"
+
+msgid "Select a dedicated WAN device; LAN devices cannot be limited"
+msgstr "请选择独立的 WAN 设备，不能限制局域网设备"
+
+msgid "Disable firewall software/hardware flow offloading first, or quota control may be bypassed"
+msgstr "请先关闭防火墙的软件/硬件流量分载，否则额度控制可能被绕过"
+
+msgid "Unable to disable HNAT hardware acceleration"
+msgstr "无法关闭 HNAT 硬件加速"
+
+msgid "Another QoS queue exists on WAN; disable other shaping plugins first"
+msgstr "WAN 已有其他 QoS 队列，请先停用其他限速插件"
+
+msgid "Another ingress QoS rule exists on WAN"
+msgstr "WAN 已有其他入站 QoS 规则"
+
+msgid "Cannot create download shaping device; please install kmod-ifb"
+msgstr "无法创建下载限速设备，请安装 kmod-ifb"
+
+msgid "Failed to apply shaping rules; check tc and scheduler modules"
+msgstr "限速规则应用失败，请检查 tc 和调度模块"
+
+msgid "Failed to apply blocking rules; check nftables"
+msgstr "断网规则应用失败，请检查 nftables"

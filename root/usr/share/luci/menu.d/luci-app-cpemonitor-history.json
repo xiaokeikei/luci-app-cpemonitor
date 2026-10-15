@@ -1,9 +1,8 @@
 {
 	"admin/status/cpemonitor/history": {
-		"title": "历史查询",
+		"title": "History",
 		"order": 5,
 		"action": { "type": "view", "path": "cpemonitor/history" },
 		"depends": { "acl": [ "luci-app-cpemonitor" ] }
 	}
 }
-

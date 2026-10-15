@@ -22,17 +22,17 @@ config_get Q_UP main quota_up_mbps 2
 config_get Q_BILL main quota_bill_day 1
 Q_ERROR=''
 for value in "$Q_GB" "$Q_PERCENT" "$Q_DOWN" "$Q_UP" "$Q_BILL"; do
-    case "$value" in ''|*[!0-9]*) Q_ERROR='额度、阈值、速率和账单日必须为正整数';; esac
+    case "$value" in ''|*[!0-9]*) Q_ERROR='Quota, threshold, rates and billing day must be positive integers';; esac
 done
 if [ -z "$Q_ERROR" ]; then
     [ "$Q_GB" -ge 1 ] && [ "$Q_GB" -le 10000000 ] &&
     [ "$Q_PERCENT" -ge 1 ] && [ "$Q_PERCENT" -le 99 ] &&
     [ "$Q_DOWN" -ge 1 ] && [ "$Q_DOWN" -le 1000000 ] &&
     [ "$Q_UP" -ge 1 ] && [ "$Q_UP" -le 1000000 ] &&
-    [ "$Q_BILL" -ge 1 ] && [ "$Q_BILL" -le 28 ] || Q_ERROR='额度控制参数超出有效范围'
+    [ "$Q_BILL" -ge 1 ] && [ "$Q_BILL" -le 28 ] || Q_ERROR='Quota parameters are out of range'
 fi
 if [ -n "$Q_ERROR" ]; then Q_GB=1000; Q_PERCENT=80; Q_DOWN=10; Q_UP=2; Q_BILL=1; fi
-case "$IFACE" in ''|*[!a-zA-Z0-9_.:-]*|lo|br-*|ra[0-9]*|rai[0-9]*) Q_ERROR='请选择独立的 WAN 设备，不能限制局域网设备';; esac
+case "$IFACE" in ''|*[!a-zA-Z0-9_.:-]*|lo|br-*|ra[0-9]*|rai[0-9]*) Q_ERROR='Select a dedicated WAN device; LAN devices cannot be limited';; esac
 Q_LIMIT=$((Q_GB * 1000000000))
 HNAT=/sys/kernel/debug/hnat/hook_toggle
 IFB=cmquota0
@@ -58,12 +58,12 @@ acceleration_restore() {
 acceleration_disable() {
     if [ "$(uci -q get firewall.@defaults[0].flow_offloading)" = 1 ] ||
        [ "$(uci -q get firewall.@defaults[0].flow_offloading_hw)" = 1 ]; then
-        Q_ERROR='请先关闭防火墙的软件/硬件流量分载，否则额度控制可能被绕过'; return 1
+        Q_ERROR='Disable firewall software/hardware flow offloading first, or quota control may be bypassed'; return 1
     fi
     if [ -w "$HNAT" ]; then
         [ -f "$RAM_DIR/quota-hnat" ] || cat "$HNAT" > "$RAM_DIR/quota-hnat"
         [ "$(cat "$HNAT")" = disabled ] || echo 0 > "$HNAT"
-        [ "$(cat "$HNAT")" = disabled ] || { Q_ERROR='无法关闭 HNAT 硬件加速'; return 1; }
+        [ "$(cat "$HNAT")" = disabled ] || { Q_ERROR='Unable to disable HNAT hardware acceleration'; return 1; }
     fi
 }
 shape() {
@@ -71,12 +71,12 @@ shape() {
     old=$(cat "$RAM_DIR/quota-interface" 2>/dev/null)
     [ -n "$old" ] && [ "$old" != "$IFACE" ] && unshape
     root=$(tc qdisc show dev "$IFACE" 2>/dev/null | grep ' root ')
-    case "$root" in *'tbf 1c01:'*|*'fq_codel 0:'*|*'noqueue 0:'*|'') ;; *) Q_ERROR='WAN 已有其他 QoS 队列，请先停用其他限速插件'; return 1;; esac
+    case "$root" in *'tbf 1c01:'*|*'fq_codel 0:'*|*'noqueue 0:'*|'') ;; *) Q_ERROR='Another QoS queue exists on WAN; disable other shaping plugins first'; return 1;; esac
     if [ ! -f "$RAM_DIR/quota-ingress" ] && tc qdisc show dev "$IFACE" | grep -Eq 'ingress|clsact'; then
-        Q_ERROR='WAN 已有其他入站 QoS 规则'; return 1
+        Q_ERROR='Another ingress QoS rule exists on WAN'; return 1
     fi
     if [ ! -f "$RAM_DIR/quota-ifb" ]; then
-        ip link add "$IFB" type ifb || { Q_ERROR='无法创建下载限速设备，请安装 kmod-ifb'; return 1; }
+        ip link add "$IFB" type ifb || { Q_ERROR='Cannot create download shaping device; please install kmod-ifb'; return 1; }
         touch "$RAM_DIR/quota-ifb"
     fi
     echo "$IFACE" > "$RAM_DIR/quota-interface"
@@ -144,14 +144,14 @@ elif [ -z "$Q_ERROR" ] && acceleration_disable; then
                ! tc qdisc show dev "$IFACE" | grep -q 'tbf 1c01:' ||
                ! tc qdisc show dev "$IFB" 2>/dev/null | grep -q 'tbf 1c02:'; then
                 if shape; then echo "$signature" > "$RAM_DIR/quota-shape"
-                else [ -n "$Q_ERROR" ] || Q_ERROR='限速规则应用失败，请检查 tc 和调度模块'; unshape; fi
+                else [ -n "$Q_ERROR" ] || Q_ERROR='Failed to apply shaping rules; check tc and scheduler modules'; unshape; fi
             fi
             unblock ;;
         blocked)
             unshape
             if [ "$(cat "$RAM_DIR/quota-block-interface" 2>/dev/null)" != "$IFACE" ] || ! nft list table inet cpe_quota >/dev/null 2>&1; then
                 if block; then echo "$IFACE" > "$RAM_DIR/quota-block-interface"
-                else Q_ERROR='断网规则应用失败，请检查 nftables'; fi
+                else Q_ERROR='Failed to apply blocking rules; check nftables'; fi
             fi ;;
         *) unshape; unblock ;;
     esac

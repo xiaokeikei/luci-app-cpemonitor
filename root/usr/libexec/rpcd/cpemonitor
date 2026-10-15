@@ -75,6 +75,6 @@ case "$1" in
 		band_history) band_history ;;
 		quota_action)
 			json_load "$(cat)"; json_get_var action action
-			case "$action" in unlock|resume) /usr/sbin/cpemonitor-quota "$action";; *) echo '{"error":"无效操作"}';; esac ;;
+			case "$action" in unlock|resume) /usr/sbin/cpemonitor-quota "$action";; *) echo '{"error":"Invalid action"}';; esac ;;
 		esac ;;
 esac

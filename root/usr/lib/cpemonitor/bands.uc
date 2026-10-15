@@ -62,7 +62,7 @@ function parse_modem(item, position, source) {
     for (let c in carriers) if (index(bands, c.band) < 0) push(bands, c.band);
     sort(bands);
     let id = text(item.id ?? item.config_section ?? data.id) || port || sprintf('modem-%d', position + 1);
-    return { id: id, model: model, mode: mode || '未知', bands: bands, carriers: carriers,
+    return { id: id, model: model, mode: mode || 'unknown', bands: bands, carriers: carriers,
         status: length(bands) ? 'known' : connected == false ? 'unavailable' : 'unknown',
         source: source, completeness: 'reported-only' };
 }

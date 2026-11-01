@@ -2,13 +2,17 @@
 
 面向 Hiveton H5000M / ImmortalWrt 24.10 的轻量 CPE 网络监控插件，集中查看网速、延迟、系统状态、模组信号与频段，并统计每日流量。支持历史查询和可选的月度额度控制。
 
-当前版本：**v1.6.1**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
+当前版本：**v1.6.1-5**。安装包与源码见 [GitHub Releases](https://github.com/xiaokeikei/luci-app-cpemonitor/releases/latest)。
+
+顶部状态卡片分两组排列：当前下载、当前上传、今日下载、今日上传、今日总流量；CPU/内存、CPU/模组温度、风扇、延迟、在用频段。每 10 秒刷新，窄屏自动换行。
 
 ## 实时监控
 
 监控页按网速、网络延迟、系统使用率、设备温度与风扇、5G 信号、在用频段、每日流量趋势、每日流量明细排列。当前状态卡片每 10 秒刷新；图表可切换最近 10 分钟、半小时、1/2/5/12 小时或当天。
 
-![实时监控：状态卡片、网速、延迟、系统使用率与温度](docs/images/current-monitor.png)
+![实时监控：五列对齐的状态卡片，包含当前网速、今日下载、今日上传与今日总流量](docs/images/current-dashboard.png)
+
+![实时监控：网速、延迟、系统使用率与温度图表](docs/images/current-monitor.png)
 
 ## 频段与流量统计
 
@@ -38,10 +42,10 @@
 推荐下载 Release 中的 IPK 安装或升级：
 
 ```sh
-opkg install ./luci-app-cpemonitor_1.6.1-2_all.ipk
+opkg install ./luci-app-cpemonitor_1.6.1-5_all.ipk
 ```
 
-也可使用自解压安装包，执行 `sh luci-app-cpemonitor-1.6.1-2.run`（需预先安装依赖）。
+也可使用自解压安装包，执行 `sh luci-app-cpemonitor-1.6.1-5.run`（需预先安装依赖）。
 升级后若页面仍显示旧版，请按 **Ctrl+F5** 强制刷新浏览器缓存。
 
 上传并解压后，在插件目录执行：
@@ -64,7 +68,7 @@ LuCI 菜单：`状态 → CPE 监控`。
 
 ## 更新记录
 
-v1.6.1 增加每日流量趋势和日期选择，保留上次有效频段与模组温度，调整监控页顺序，并在未启用额度控制时隐藏控制区域。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+v1.6.1-5 在顶部加入今日下载、今日上传，十张状态卡片采用统一五列网格，并修复升级后的页面脚本缓存问题。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 打包
 

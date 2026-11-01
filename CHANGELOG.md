@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.1-5 - 2026-11-01
+
+- Load the aligned status grid from a new dashboard module URL to bypass cached overview code.
+- Give packaged files a current build timestamp so HTTP Last-Modified changes on upgrades instead of staying at the Unix epoch.
+
+## 1.6.1-4 - 2026-11-01
+
+- Use one five-column grid for all ten status cards and remove theme section styling that changes card widths and alignment.
+- Unify card height, padding and numeric baselines; wrap long band labels and use two/one columns on smaller screens.
+
+## 1.6.1-3 - 2026-11-01
+
+- Add today's download and upload totals to the live status cards, refreshed with the current statistics every 10 seconds.
+- Arrange speed and daily traffic in the first responsive grid, and device/network status in the second, with equal-width cards and wrapping on small screens.
+
 ## 1.6.1-2
 
 - Add selected-range total traffic and average daily total for days with records below the daily traffic chart.

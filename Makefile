@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-cpemonitor
 PKG_VERSION:=1.6.1
-PKG_RELEASE:=2
+PKG_RELEASE:=5
 PKG_MAINTAINER:=xiaokeikei
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=LICENSE
@@ -53,7 +53,7 @@ define Package/luci-app-cpemonitor/install
 	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d
 	$(INSTALL_DATA) ./root/usr/share/rpcd/acl.d/luci-app-cpemonitor.json $(1)/usr/share/rpcd/acl.d/luci-app-cpemonitor.json
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/cpemonitor
-	$(INSTALL_DATA) ./root/www/luci-static/resources/view/cpemonitor/overview.js $(1)/www/luci-static/resources/view/cpemonitor/overview.js
+	$(INSTALL_DATA) ./root/www/luci-static/resources/view/cpemonitor/dashboard.js $(1)/www/luci-static/resources/view/cpemonitor/dashboard.js
 	$(INSTALL_DATA) ./root/www/luci-static/resources/view/cpemonitor/history.js $(1)/www/luci-static/resources/view/cpemonitor/history.js
 	$(INSTALL_DATA) ./root/www/luci-static/resources/view/cpemonitor/settings.js $(1)/www/luci-static/resources/view/cpemonitor/settings.js
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/cpemonitor

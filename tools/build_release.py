@@ -5,6 +5,7 @@ import io
 import pathlib
 import re
 import tarfile
+import time
 import zipfile
 
 BASE = pathlib.Path(__file__).resolve().parents[1]
@@ -12,6 +13,7 @@ VERSION = re.search(r"PKG_VERSION:=(\S+)", (BASE / "Makefile").read_text()).grou
 RELEASE = re.search(r"PKG_RELEASE:=(\S+)", (BASE / "Makefile").read_text()).group(1)
 OUT = BASE.parent / "versions" / ("v" + VERSION)
 OUT.mkdir(parents=True, exist_ok=True)
+BUILD_TIME = int(time.time())
 EXECUTABLES = {"etc/init.d/cpemonitor", "usr/sbin/cpemonitord", "usr/sbin/cpemonitor-quota", "usr/libexec/rpcd/cpemonitor"}
 
 
@@ -28,7 +30,7 @@ def archive(files):
             tar.addfile(info)
         for name, content, mode in files:
             info = tarfile.TarInfo("./" + name)
-            info.size, info.mode, info.mtime = len(content), mode, 0
+            info.size, info.mode, info.mtime = len(content), mode, BUILD_TIME
             tar.addfile(info, io.BytesIO(content))
     return buffer.getvalue()
 

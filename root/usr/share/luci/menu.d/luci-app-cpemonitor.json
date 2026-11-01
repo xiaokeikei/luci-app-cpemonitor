@@ -2,13 +2,13 @@
 	"admin/status/cpemonitor": {
 		"title": "CPE 监控",
 		"order": 35,
-		"action": { "type": "view", "path": "cpemonitor/overview" },
+		"action": { "type": "view", "path": "cpemonitor/dashboard" },
 		"depends": { "acl": [ "luci-app-cpemonitor" ] }
 	},
 	"admin/status/cpemonitor/current": {
 		"title": "现在状态",
 		"order": 1,
-		"action": { "type": "view", "path": "cpemonitor/overview" },
+		"action": { "type": "view", "path": "cpemonitor/dashboard" },
 		"depends": { "acl": [ "luci-app-cpemonitor" ] }
 	}
 }

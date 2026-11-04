@@ -1,5 +1,6 @@
 'use strict';
 'require view';
+'require cpemonitor.carrier as carrierUI';
 'require rpc';
 'require poll';
 'require form';
@@ -9,11 +10,11 @@
 'require cpemonitor.traffic as traffic';
 
 var callCurrent = rpc.declare({ object: 'cpemonitor', method: 'current', expect: {} });
-var callHistory = rpc.declare({ object: 'cpemonitor', method: 'history', params: [ 'start', 'end', 'limit' ], expect: { rows: [] } });
+var callHistory = rpc.declare({ object: 'cpemonitor', method: 'history', params: [ 'start', 'end', 'limit', 'carrier' ], expect: {} });
 var callDaily = rpc.declare({ object: 'cpemonitor', method: 'daily', expect: { rows: [] } });
 var callMonthly = rpc.declare({ object: 'cpemonitor', method: 'monthly', expect: {} });
 var callRadio = rpc.declare({ object:'cpemonitor', method:'radio', expect:{} });
-var callBands = rpc.declare({ object:'cpemonitor', method:'band_history', params:['start','end','limit'], expect:{} });
+var callBands = rpc.declare({ object:'cpemonitor', method:'band_history', params:['start','end','limit','carrier'], expect:{} });
 var callQuotaAction = rpc.declare({ object: 'cpemonitor', method: 'quota_action', params: [ 'action' ], expect: {} });
 var speedUnit = 'Mbps', lastCurrent = null;
 
@@ -65,6 +66,7 @@ return view.extend({
 		var trafficChart=traffic.create(daily),dailyRows=E('div',{},[dailyTable(daily)]);
 		var ranges=[{seconds:600,label:'10分钟',title:'最近 10 分钟'},{seconds:1800,label:'半小时',title:'最近半小时'},{seconds:3600,label:'1小时',title:'最近 1 小时'},{seconds:7200,label:'2小时',title:'最近 2 小时'},{seconds:18000,label:'5小时',title:'最近 5 小时'},{seconds:43200,label:'12小时',title:'最近 12 小时'},{seconds:0,label:'当天',title:'当天'}];
 		var selectedRange=ranges[0], historyRequest=0;
+		var carrierPanel=carrierUI.create(function(){refreshHistory();});carrierPanel.report(data[1].carriers||[]);carrierPanel.refresh();
 		var bandPanel=E('div',{},[bands.render(data[5],Math.floor(Date.now()/1000)-600,Math.floor(Date.now()/1000))]);
 		var rangeTitle=E('span',{},'CPE 监控 · '+selectedRange.title);
 		var rangeStatus=E('span',{'aria-live':'polite',style:'font-size:12px;font-weight:normal'},'');
@@ -77,7 +79,7 @@ return view.extend({
 			var request=++historyRequest,now=Math.floor(Date.now()/1000),start=now-selectedRange.seconds;
 			if(!selectedRange.seconds){var midnight=new Date(now*1000);midnight.setHours(0,0,0,0);start=Math.floor(midnight.getTime()/1000);}
 			rangeStatus.textContent='加载中…';
-			return Promise.all([callHistory(start,now,1200),callBands(start,now,5000)]).then(function(r){if(request!==historyRequest)return;var rows=r[0];hist=Array.isArray(rows)?rows:(rows.rows||[]);bandPanel.replaceChildren(bands.render(r[1],start,now));rangeStatus.textContent=hist.length?'':'此时间范围暂无数据';charts();}).catch(function(err){if(request!==historyRequest)return;rangeStatus.textContent='加载失败，请重试';throw err;});
+			return Promise.all([callHistory(start,now,1200,carrierPanel.value()),callBands(start,now,5000)]).then(function(r){if(request!==historyRequest)return;var rows=r[0];hist=Array.isArray(rows)?rows:(rows.rows||[]);carrierPanel.report(rows.carriers||[]);bandPanel.replaceChildren(bands.render(r[1],start,now));rangeStatus.textContent=hist.length?'':'此时间范围暂无数据';charts();}).catch(function(err){if(request!==historyRequest)return;rangeStatus.textContent='加载失败，请重试';throw err;});
 		}
 		updateRangeButtons();
 		var speed=E('canvas',{style:'width:100%;height:260px'}), system=E('canvas',{style:'width:100%;height:260px'}), temperature=E('canvas',{style:'width:100%;height:260px'}), latency=E('canvas',{style:'width:100%;height:260px'}), signal=E('canvas',{style:'width:100%;height:260px'});
@@ -109,7 +111,7 @@ return view.extend({
 		var monthPanel=E('div',{class:'cbi-section',style:'padding:12px;display:none'},[E('h3',{},'月流量与额度控制'),monthStats,monthProgress,monthStatus,unlockButton,resumeButton,E('p',{style:'font-size:12px;color:#888'},'仅统计已采集流量，与运营商计费可能存在偏差；账单周期和额度可在设置页调整。')]);
 		showMonthly(data[3]);
 		var root=E('div',{},[E('h2',{style:'display:flex;align-items:center;flex-wrap:wrap;gap:10px'},[rangeTitle,E('span',{role:'group','aria-label':'监控时间范围',style:'display:flex;flex-wrap:wrap;gap:5px;align-items:center'},rangeButtons),rangeStatus]),cards,
-			monthPanel,
+			carrierPanel.node,monthPanel,
 			E('div',{class:'cbi-section'},[E('h3',{id:'cm-speed-title'},['实时速率（下载蓝 / 上传橙，'+speedUnit+'）',unitSelect]),speed]),
 			E('div',{class:'cbi-section'},[E('h3',{},'网络延迟（阿里绿 / 腾讯蓝）'),latency]),
 			E('div',{class:'cbi-section'},[E('h3',{},'系统使用率（CPU 红 / 内存紫）'),system]),
@@ -126,7 +128,7 @@ return view.extend({
 		function charts(){draw(speed,hist,[{i:1,color:'#1e88e5',min:0,map:speedValue},{i:2,color:'#fb8c00',min:0,map:speedValue}]);draw(system,hist,[{i:3,color:'#e53935',min:0},{i:4,color:'#8e24aa',min:0}]);draw(temperature,hist,[{i:5,color:'#e53935',min:0},{i:6,color:'#1e88e5',min:0},{i:7,color:'#fb8c00',min:0},{i:17,color:'#43a047',min:0}]);draw(latency,hist,[{i:8,color:'#43a047',min:0},{i:10,color:'#1e88e5',min:0}]);draw(signal,hist,[{i:14,color:'#e53935',min:-200},{i:15,color:'#fb8c00',min:-200},{i:16,color:'#43a047',min:-200}]);}
 		window.setTimeout(function(){charts();ensureCurrentTab();document.getElementById('cm-band').textContent=bands.currentLabel(data[4]);},0); window.addEventListener('resize',charts);
 		poll.add(function(){return callDaily().then(function(r){daily=Array.isArray(r)?r:(r.rows||[]);trafficChart.update(daily);dailyRows.replaceChildren(dailyTable(daily));});},60);
-		poll.add(function(){return Promise.all([callCurrent(),refreshHistory(),callMonthly(),callRadio()]).then(function(r){var x=r[0];lastCurrent=x;showMonthly(r[2]);document.getElementById('cm-band').textContent=bands.currentLabel(r[3]);document.getElementById('cm-down').textContent=rate(x.down_bps);document.getElementById('cm-up').textContent=rate(x.up_bps);document.getElementById('cm-day-down').textContent=bytes(x.day_download);document.getElementById('cm-day-up').textContent=bytes(x.day_upload);document.getElementById('cm-day').textContent=bytes(Number(x.day_download)+Number(x.day_upload));document.getElementById('cm-cpu').textContent=x.cpu_pct+'% / '+x.mem_pct+'%';document.getElementById('cm-temp').textContent=x.cpu_temp+'°C / '+x.modem_temp+'°C';document.getElementById('cm-fan').textContent=(x.fan_pct == null ? '--' : x.fan_pct+'%');document.getElementById('cm-ping').textContent=x.aliyun_ms+' / '+x.tencent_ms+' ms';});},10);
+		poll.add(function(){return Promise.all([callCurrent(),refreshHistory(),callMonthly(),callRadio()]).then(function(r){var x=r[0];lastCurrent=x;carrierPanel.refresh();showMonthly(r[2]);document.getElementById('cm-band').textContent=bands.currentLabel(r[3]);document.getElementById('cm-down').textContent=rate(x.down_bps);document.getElementById('cm-up').textContent=rate(x.up_bps);document.getElementById('cm-day-down').textContent=bytes(x.day_download);document.getElementById('cm-day-up').textContent=bytes(x.day_upload);document.getElementById('cm-day').textContent=bytes(Number(x.day_download)+Number(x.day_upload));document.getElementById('cm-cpu').textContent=x.cpu_pct+'% / '+x.mem_pct+'%';document.getElementById('cm-temp').textContent=x.cpu_temp+'°C / '+x.modem_temp+'°C';document.getElementById('cm-fan').textContent=(x.fan_pct == null ? '--' : x.fan_pct+'%');document.getElementById('cm-ping').textContent=x.aliyun_ms+' / '+x.tencent_ms+' ms';});},10);
 		return root;
 	},
 	handleSaveApply: null, handleSave: null, handleReset: null

@@ -14,7 +14,7 @@ RELEASE = re.search(r"PKG_RELEASE:=(\S+)", (BASE / "Makefile").read_text()).grou
 OUT = BASE.parent / "versions" / ("v" + VERSION)
 OUT.mkdir(parents=True, exist_ok=True)
 BUILD_TIME = int(time.time())
-EXECUTABLES = {"etc/init.d/cpemonitor", "usr/sbin/cpemonitord", "usr/sbin/cpemonitor-quota", "usr/libexec/rpcd/cpemonitor"}
+EXECUTABLES = {"etc/init.d/cpemonitor", "usr/sbin/cpemonitord", "usr/sbin/cpemonitor-quota", "usr/libexec/rpcd/cpemonitor", "usr/libexec/cpemonitor-carrier"}
 
 
 def archive(files):

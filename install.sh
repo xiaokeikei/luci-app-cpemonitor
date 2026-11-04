@@ -15,7 +15,7 @@ find "$BASE/root" -type f | while IFS= read -r file; do
     mkdir -p "$(dirname "$dest")"
     cp "$file" "$dest"
 done
-chmod 755 /usr/sbin/cpemonitord /usr/sbin/cpemonitor-quota /etc/init.d/cpemonitor /usr/libexec/rpcd/cpemonitor
+chmod 755 /usr/libexec/cpemonitor-carrier /usr/sbin/cpemonitord /usr/sbin/cpemonitor-quota /etc/init.d/cpemonitor /usr/libexec/rpcd/cpemonitor
 rm -f /tmp/luci-indexcache /tmp/luci-indexcache.* /tmp/luci-modulecache/* 2>/dev/null || true
 /etc/init.d/rpcd restart
 /etc/init.d/cpemonitor enable

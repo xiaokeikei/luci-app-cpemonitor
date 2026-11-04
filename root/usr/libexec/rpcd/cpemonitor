@@ -15,10 +15,12 @@ current() {
 
 history() {
 	json_load "$(cat)" 2>/dev/null
-	json_get_var start start; json_get_var end end; json_get_var limit limit
+	json_get_var start start; json_get_var end end; json_get_var limit limit; json_get_var carrier carrier
+	case "$carrier" in ''|all) carrier=-1;; [0-6]) ;; *) echo '{"error":"invalid_carrier"}'; return;; esac
 	now=$(date +%s); [ "$end" -gt 0 ] 2>/dev/null || end=$now
 	[ "$start" -gt 0 ] 2>/dev/null || start=$((end - 600))
 	[ "$start" -le "$end" ] || { t=$start; start=$end; end=$t; }
+	[ $((end-start)) -le 31622400 ] || start=$((end-31622400))
 	[ "$limit" -ge 10 ] 2>/dev/null || limit=1200; [ "$limit" -le 5000 ] || limit=5000
 	data_dir=$(uci -q get cpemonitor.main.data_dir); [ -n "$data_dir" ] || data_dir=/overlay/cpemonitor
 	tmp=/tmp/cpemonitor/rpc-history.$$; raw=$tmp.raw; : > "$raw"
@@ -29,10 +31,7 @@ history() {
 		day_epoch=$((day_epoch + 86400))
 	done
 	awk -F, -v s="$start" -v e="$end" '$1 ~ /^[0-9]+$/ && $1 >= s && $1 <= e' "$raw" > "$tmp"
-	count=$(wc -l < "$tmp"); step=$(((count + limit - 1) / limit)); [ "$step" -ge 1 ] || step=1
-	printf '{"rows":['; first=1
-	awk -v step="$step" 'NR == 1 || NR % step == 0 { print }' "$tmp" | while IFS= read -r line; do [ -n "$line" ] || continue; [ "$first" = 1 ] || printf ','; first=0; printf '[%s]' "$line"; done
-	printf ']}'
+	ucode /usr/lib/cpemonitor/carrier-history.uc "$tmp" "$start" "$end" "$limit" "$carrier"
 	rm -f "$tmp" "$raw"
 }
 
@@ -67,12 +66,17 @@ band_history() {
 }
 
 case "$1" in
-	list) echo '{"current":{},"history":{"start":"Integer","end":"Integer","limit":"Integer"},"daily":{},"monthly":{},"radio":{},"band_history":{"start":"Integer","end":"Integer","limit":"Integer"},"quota_action":{"action":"String"}}' ;;
+	list) echo '{"current":{},"history":{"start":"Integer","end":"Integer","limit":"Integer","carrier":"String"},"daily":{},"monthly":{},"radio":{},"band_history":{"start":"Integer","end":"Integer","limit":"Integer"},"quota_action":{"action":"String"},"carrier_status":{},"carrier_set":{"value":"String"},"carrier_switch":{"value":"String"},"carrier_job":{"value":"String"}}' ;;
 	call) case "$2" in
 		current) current;; history) history;; daily) daily;;
 		monthly) cat /tmp/cpemonitor/monthly.json 2>/dev/null || echo '{}' ;;
 		radio) cat /tmp/cpemonitor/band-current.json 2>/dev/null || echo '{}' ;;
 		band_history) band_history ;;
+		carrier_status) /usr/libexec/cpemonitor-carrier status;;
+		carrier_set|carrier_switch|carrier_job)
+			json_load "$(cat)"; json_get_var value value
+			case "$2" in carrier_set) mode=set;; carrier_switch) mode=switch;; carrier_job) mode=job;; esac
+			/usr/libexec/cpemonitor-carrier "$mode" "$value";;
 		quota_action)
 			json_load "$(cat)"; json_get_var action action
 			case "$action" in unlock|resume) /usr/sbin/cpemonitor-quota "$action";; *) echo '{"error":"无效操作"}';; esac ;;

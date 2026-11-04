@@ -1,7 +1,34 @@
 {
-	"luci-app-cpemonitor": {
-		"description": "访问 CPE 监控数据和设置",
-		"read": { "ubus": { "cpemonitor": [ "current", "history", "daily", "monthly", "radio", "band_history" ] }, "uci": [ "cpemonitor" ] },
-		"write": { "ubus": { "cpemonitor": [ "quota_action" ] }, "uci": [ "cpemonitor" ] }
-	}
+  "luci-app-cpemonitor": {
+    "description": "访问 CPE 监控数据和设置",
+    "read": {
+      "ubus": {
+        "cpemonitor": [
+          "current",
+          "history",
+          "daily",
+          "monthly",
+          "radio",
+          "band_history",
+          "carrier_status",
+          "carrier_job"
+        ]
+      },
+      "uci": [
+        "cpemonitor"
+      ]
+    },
+    "write": {
+      "ubus": {
+        "cpemonitor": [
+          "quota_action",
+          "carrier_set",
+          "carrier_switch"
+        ]
+      },
+      "uci": [
+        "cpemonitor"
+      ]
+    }
+  }
 }

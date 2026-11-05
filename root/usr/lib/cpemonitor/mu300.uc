@@ -2,6 +2,7 @@
 import { readfile } from 'fs';
 let d;
 try { d = json(readfile('/dev/stdin')); } catch (e) { d = {}; }
+if (type(d) != 'object') d = {};
 let now = +ARGV[0], stamp = +(d.ts ?? 0);
 let registered = index([1, 5], +(d.reg?.stat ?? 0)) >= 0 || index([1, 5], +(d.reg5g?.stat ?? 0)) >= 0;
 let valid = stamp > 0 && stamp <= now && now - stamp <= 120 && registered;

@@ -12,4 +12,5 @@ assert 'ident' not in result and 'synthetic-only' not in json.dumps(result)
 assert parse({**sample, 'ts': 1})['carriers'] == []
 assert parse({**sample, 'reg': {'stat': 0}})['carriers'] == []
 assert parse({})['rsrp'] == -999
+assert parse(None)['rsrp'] == -999
 print('PASS MU300 signals, serving bands, stale/disconnected caches and identity exclusion')

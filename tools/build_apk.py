@@ -78,11 +78,11 @@ def main():
             tc_root = work / 'tc'
             tc_root.mkdir()
             subprocess.run([APK, 'extract', '--allow-untrusted', '--destination', str(tc_root), str(dependency)], check=True)
-            candidates = [p for p in tc_root.rglob('tc') if p.is_file()]
-            if len(candidates) != 1:
-                raise ValueError('Expected one tc executable')
+            executable = tc_root / 'usr/libexec/tc-tiny'
+            if not executable.is_file():
+                raise ValueError('Missing upstream tc-tiny executable')
             target = stage / 'usr/libexec/cpemonitor-tc'
-            target.write_bytes(candidates[0].read_bytes())
+            target.write_bytes(executable.read_bytes())
             target.chmod(0o755)
             os.utime(target, (EPOCH, EPOCH))
             data = target.read_bytes()

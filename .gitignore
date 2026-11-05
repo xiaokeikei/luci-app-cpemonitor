@@ -4,3 +4,6 @@
 *.tar.gz
 .DS_Store
 .ipkbuild/
+
+# Local device screenshots may contain private information.
+docs/images/

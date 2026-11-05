@@ -40,14 +40,16 @@ case "$IFACE" in ''|*[!a-zA-Z0-9_.:-]*|lo|br-*|ra[0-9]*|rai[0-9]*) Q_ERROR='请�
 Q_LIMIT=$((Q_GB * 1000000000))
 HNAT=/sys/kernel/debug/hnat/hook_toggle
 IFB=cmquota0
+TC=tc
+[ -x /usr/libexec/cpemonitor-tc ] && TC=/usr/libexec/cpemonitor-tc
 
 unshape() {
     local old
     old=$(cat "$RAM_DIR/quota-interface" 2>/dev/null)
     if [ -n "$old" ]; then
-        tc qdisc show dev "$old" 2>/dev/null | grep -q 'tbf 1c01:' && tc qdisc del dev "$old" root 2>/dev/null
+        "$TC" qdisc show dev "$old" 2>/dev/null | grep -q 'tbf 1c01:' && "$TC" qdisc del dev "$old" root 2>/dev/null
         # Only remove the ingress qdisc recorded as created by this plugin.
-        [ -f "$RAM_DIR/quota-ingress" ] && tc qdisc del dev "$old" ingress 2>/dev/null
+        [ -f "$RAM_DIR/quota-ingress" ] && "$TC" qdisc del dev "$old" ingress 2>/dev/null
     fi
     [ -f "$RAM_DIR/quota-ifb" ] && ip link del "$IFB" 2>/dev/null
     rm -f "$RAM_DIR/quota-interface" "$RAM_DIR/quota-ingress" "$RAM_DIR/quota-ifb"
@@ -76,9 +78,9 @@ shape() {
     for module in ifb sch_tbf cls_matchall act_mirred; do modprobe "$module" 2>/dev/null || true; done
     old=$(cat "$RAM_DIR/quota-interface" 2>/dev/null)
     [ -n "$old" ] && [ "$old" != "$IFACE" ] && unshape
-    root=$(tc qdisc show dev "$IFACE" 2>/dev/null | grep ' root ')
+    root=$("$TC" qdisc show dev "$IFACE" 2>/dev/null | grep ' root ')
     case "$root" in *'tbf 1c01:'*|*'fq_codel 0:'*|*'noqueue 0:'*|'') ;; *) Q_ERROR='WAN 已有其他 QoS 队列，请先停用其他限速插件'; return 1;; esac
-    if [ ! -f "$RAM_DIR/quota-ingress" ] && tc qdisc show dev "$IFACE" | grep -Eq 'ingress|clsact'; then
+    if [ ! -f "$RAM_DIR/quota-ingress" ] && "$TC" qdisc show dev "$IFACE" | grep -Eq 'ingress|clsact'; then
         Q_ERROR='WAN 已有其他入站 QoS 规则'; return 1
     fi
     if [ ! -f "$RAM_DIR/quota-ifb" ]; then
@@ -87,13 +89,13 @@ shape() {
     fi
     echo "$IFACE" > "$RAM_DIR/quota-interface"
     ip link set "$IFB" up || return 1
-    tc qdisc replace dev "$IFB" root handle 1c02: tbf rate "${Q_DOWN}mbit" burst 256kb latency 100ms || return 1
+    "$TC" qdisc replace dev "$IFB" root handle 1c02: tbf rate "${Q_DOWN}mbit" burst 256kb latency 100ms || return 1
     if [ ! -f "$RAM_DIR/quota-ingress" ]; then
-        tc qdisc add dev "$IFACE" handle ffff: ingress || return 1
+        "$TC" qdisc add dev "$IFACE" handle ffff: ingress || return 1
         touch "$RAM_DIR/quota-ingress"
     fi
-    tc filter replace dev "$IFACE" parent ffff: protocol all pref 49150 matchall action mirred egress redirect dev "$IFB" || return 1
-    tc qdisc replace dev "$IFACE" root handle 1c01: tbf rate "${Q_UP}mbit" burst 256kb latency 100ms
+    "$TC" filter replace dev "$IFACE" parent ffff: protocol all pref 49150 matchall action mirred egress redirect dev "$IFB" || return 1
+    "$TC" qdisc replace dev "$IFACE" root handle 1c01: tbf rate "${Q_UP}mbit" burst 256kb latency 100ms
 }
 block() {
     # Keep DHCP/IPv6 neighbour discovery working; LAN management never matches.
@@ -147,8 +149,8 @@ elif [ -z "$Q_ERROR" ] && acceleration_disable; then
         limited)
             signature="$IFACE:$Q_DOWN:$Q_UP"
             if [ "$(cat "$RAM_DIR/quota-shape" 2>/dev/null)" != "$signature" ] ||
-               ! tc qdisc show dev "$IFACE" | grep -q 'tbf 1c01:' ||
-               ! tc qdisc show dev "$IFB" 2>/dev/null | grep -q 'tbf 1c02:'; then
+               ! "$TC" qdisc show dev "$IFACE" | grep -q 'tbf 1c01:' ||
+               ! "$TC" qdisc show dev "$IFB" 2>/dev/null | grep -q 'tbf 1c02:'; then
                 if shape; then echo "$signature" > "$RAM_DIR/quota-shape"
                 else [ -n "$Q_ERROR" ] || Q_ERROR='限速规则应用失败，请检查 tc 和调度模块'; unshape; fi
             fi

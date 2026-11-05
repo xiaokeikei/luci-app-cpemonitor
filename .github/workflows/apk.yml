@@ -61,8 +61,14 @@ jobs:
           echo "493336e176fdc1d6a377763e87a58c5854c24f51e83e586b209783e4bb648d42  $RUNNER_TEMP/rootfs.tar.gz" | sha256sum -c -
           mkdir "$RUNNER_TEMP/arm64-root"
           sudo tar -xzf "$RUNNER_TEMP/rootfs.tar.gz" -C "$RUNNER_TEMP/arm64-root"
+          sudo "$APK" --root "$RUNNER_TEMP/arm64-root" list --installed | sort > "$RUNNER_TEMP/packages-before"
           sudo "$APK" --root "$RUNNER_TEMP/arm64-root" --arch aarch64_generic --no-scripts --allow-untrusted add "$GITHUB_WORKSPACE"/dist/*.apk
           sudo "$APK" --root "$RUNNER_TEMP/arm64-root" info -e "${GITHUB_REPOSITORY#*/}"
+          sudo "$APK" --root "$RUNNER_TEMP/arm64-root" list --installed | sort > "$RUNNER_TEMP/packages-after"
+          if comm -13 "$RUNNER_TEMP/packages-before" "$RUNNER_TEMP/packages-after" | grep -E "^(kmod-|kernel-)"; then
+            echo "Installation unexpectedly changed kernel packages" >&2
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: openwrt-apk

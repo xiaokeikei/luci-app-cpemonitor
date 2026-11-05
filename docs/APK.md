@@ -2,6 +2,8 @@
 
 面向 OpenWrt 25.12.5 / APK v3；MU300 / U30 Air 目标架构为 `aarch64_generic`。这不是安卓应用。保留原有 IPK 供 opkg 系统使用。
 
+CPE APK 包含 ARM64 私有限速程序，因此标记为 aarch64_generic，不作为跨 CPU 架构通用包发布。
+
 ```sh
 apk update
 apk add --allow-untrusted ./luci-app-cpemonitor-*.apk

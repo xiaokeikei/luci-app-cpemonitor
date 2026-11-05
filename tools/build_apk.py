@@ -63,7 +63,7 @@ def main():
             target.write_bytes(data)
             target.chmod(0o755)
             os.utime(target, (EPOCH, EPOCH))
-        arch = 'aarch64_generic' if NAME == 'luci-app-cf-dns-speedtest' else 'noarch'
+        arch = 'aarch64_generic'  # The private tc runtime is an ARM64 executable.
         deps = re.search(r'  DEPENDS:=(.*)', make)[1].replace('+', '').split()
         if NAME == 'luci-app-cpemonitor':
             # tc-tiny itself depends on kmod-sched-core. Use its verified binary

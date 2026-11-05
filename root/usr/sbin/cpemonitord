@@ -83,6 +83,17 @@ read_temps() {
 	t="$(/sbin/tempinfo 2>/dev/null)"
 	CPU_TEMP="$(echo "$t" | sed -n 's/.*CPU: *\([0-9.]*\).*/\1/p')"
 	WIFI_TEMP="$(echo "$t" | sed -n 's/.*WiFi: *\([0-9.]*\).*/\1/p')"
+	if [ -z "$CPU_TEMP" ] && [ -x /opt/mu300/bin/mu300-modemd ]; then
+		local zone kind raw
+		for zone in /sys/class/thermal/thermal_zone*; do
+			kind=$(cat "$zone/type" 2>/dev/null)
+			case "$kind" in *cpu*|*soc*|*ap-thermal*)
+				raw=$(cat "$zone/temp" 2>/dev/null)
+				CPU_TEMP=$(printf '%s' "$raw" | awk '/^[0-9]+$/ {printf "%.1f", $1/1000}')
+				[ -n "$CPU_TEMP" ] && break;;
+			esac
+		done
+	fi
 	[ -n "$CPU_TEMP" ] || CPU_TEMP=-1
 	[ -n "$WIFI_TEMP" ] || WIFI_TEMP=-1
 }
@@ -95,6 +106,23 @@ read_fan() {
 
 read_modem() {
 	local j modem_temp
+	if [ -x /opt/mu300/bin/mu300-modemd ]; then
+		local slot cache stamp tmp
+		slot=$(cat /run/mu300-data-sim-actual 2>/dev/null)
+		cache=/tmp/unisoc-modem/sig.json
+		[ "$slot" = 1 ] && cache=/tmp/unisoc-modem/sim1/sig.json
+		stamp=$(date +%s); tmp="$RAM_DIR/band-current.new"
+		j=$(ucode /usr/lib/cpemonitor/mu300.uc "$stamp" < "$cache" 2>/dev/null)
+		RSRP=$(printf '%s' "$j" | jsonfilter -e '@.rsrp'); RSRP=${RSRP:--999}
+		RSRQ=$(printf '%s' "$j" | jsonfilter -e '@.rsrq'); RSRQ=${RSRQ:--999}
+		SINR=$(printf '%s' "$j" | jsonfilter -e '@.sinr'); SINR=${SINR:--999}
+		MODEM_TEMP=-1
+		printf '%s' "$j" | ucode /usr/lib/cpemonitor/bands.uc normalize "$stamp" mu300 "$MODEM_SAMPLE" > "$tmp"
+		[ -s "$tmp" ] && ucode /usr/lib/cpemonitor/bands.uc retain "$RAM_DIR/band-current.json" < "$tmp" > "$RAM_DIR/band-current.ready" && mv "$RAM_DIR/band-current.ready" "$RAM_DIR/band-current.json"
+		[ -s "$RAM_DIR/band-current.json" ] && cat "$RAM_DIR/band-current.json" >> "$RAM_DIR/bands-$(date +%F).jsonl"
+		rm -f "$tmp"
+		return
+	fi
 	j="$(ubus -t 10 call modem_ctrl info 2>/dev/null)"
 	modem_temp="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="temperature"].value' 2>/dev/null | head -1)"
 	RSRP="$(echo "$j" | jsonfilter -e '@.info[0].modem_info[@.key="RSRP"].value' 2>/dev/null | head -1)"

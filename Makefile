@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-cpemonitor
 PKG_VERSION:=1.7.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MAINTAINER:=xiaokeikei
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=LICENSE
@@ -46,6 +46,7 @@ define Package/luci-app-cpemonitor/install
 	$(INSTALL_DATA) ./root/usr/lib/cpemonitor/traffic-delta.awk $(1)/usr/lib/cpemonitor/traffic-delta.awk
 	$(INSTALL_DATA) ./root/usr/lib/cpemonitor/quota.sh $(1)/usr/lib/cpemonitor/quota.sh
 	$(INSTALL_DATA) ./root/usr/lib/cpemonitor/bands.uc $(1)/usr/lib/cpemonitor/bands.uc
+	$(INSTALL_DATA) ./root/usr/lib/cpemonitor/mu300.uc $(1)/usr/lib/cpemonitor/mu300.uc
 	$(INSTALL_DIR) $(1)/usr/libexec/rpcd
 	$(INSTALL_BIN) ./root/usr/libexec/cpemonitor-carrier $(1)/usr/libexec/cpemonitor-carrier
 	$(INSTALL_BIN) ./root/usr/libexec/rpcd/cpemonitor $(1)/usr/libexec/rpcd/cpemonitor

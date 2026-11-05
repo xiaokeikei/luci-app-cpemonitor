@@ -14,6 +14,10 @@ done
 config_load cpemonitor
 config_get DATA_DIR main data_dir /overlay/cpemonitor
 config_get IFACE main interface wwan0
+if [ -x /opt/mu300/bin/mu300-modemd ]; then
+    active=$(ubus -t 2 call network.interface.wan status 2>/dev/null | jsonfilter -e '@.l3_device')
+    case "$active" in ''|*[!a-zA-Z0-9_.:-]*) ;; *) [ -d "/sys/class/net/$active" ] && IFACE=$active;; esac
+fi
 config_get_bool Q_ENABLED main quota_enabled 0
 config_get Q_GB main quota_gb 1000
 config_get Q_PERCENT main quota_percent 80
@@ -68,6 +72,8 @@ acceleration_disable() {
 }
 shape() {
     local root old
+    # The MU300 kernel supplies its own modules; do not install feed kmods.
+    for module in ifb sch_tbf cls_matchall act_mirred; do modprobe "$module" 2>/dev/null || true; done
     old=$(cat "$RAM_DIR/quota-interface" 2>/dev/null)
     [ -n "$old" ] && [ "$old" != "$IFACE" ] && unshape
     root=$(tc qdisc show dev "$IFACE" 2>/dev/null | grep ' root ')
@@ -76,7 +82,7 @@ shape() {
         Q_ERROR='WAN 已有其他入站 QoS 规则'; return 1
     fi
     if [ ! -f "$RAM_DIR/quota-ifb" ]; then
-        ip link add "$IFB" type ifb || { Q_ERROR='无法创建下载限速设备，请安装 kmod-ifb'; return 1; }
+        ip link add "$IFB" type ifb || { Q_ERROR='当前运行内核的 IFB 模块不可用，请检查匹配的内核模块'; return 1; }
         touch "$RAM_DIR/quota-ifb"
     fi
     echo "$IFACE" > "$RAM_DIR/quota-interface"

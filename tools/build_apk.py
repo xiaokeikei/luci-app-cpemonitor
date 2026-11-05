@@ -66,7 +66,36 @@ def main():
         arch = 'aarch64_generic' if NAME == 'luci-app-cf-dns-speedtest' else 'noarch'
         deps = re.search(r'  DEPENDS:=(.*)', make)[1].replace('+', '').split()
         if NAME == 'luci-app-cpemonitor':
-            deps = [d for d in deps if not d.startswith('kmod-')] + ['ip-full', 'flock']
+            # tc-tiny itself depends on kmod-sched-core. Use its verified binary
+            # privately, without changing the system's tc or kernel packages.
+            deps = [d for d in deps if not d.startswith('kmod-') and d != 'tc-tiny'] + ['ip-full', 'flock']
+            url = 'https://downloads.openwrt.org/releases/25.12.5/packages/aarch64_generic/base/tc-tiny-6.18.0-r2.apk'
+            blob = urllib.request.urlopen(url, timeout=120).read()
+            if hashlib.sha256(blob).hexdigest() != '77c72c9b65921352f6169dbd6a482db55a4d4bdd9732dbf8ddce89addccada68':
+                raise ValueError('tc runtime checksum mismatch')
+            dependency = work / 'tc.apk'
+            dependency.write_bytes(blob)
+            tc_root = work / 'tc'
+            tc_root.mkdir()
+            subprocess.run([APK, 'extract', '--allow-untrusted', '--destination', str(tc_root), str(dependency)], check=True)
+            candidates = [p for p in tc_root.rglob('tc') if p.is_file()]
+            if len(candidates) != 1:
+                raise ValueError('Expected one tc executable')
+            target = stage / 'usr/libexec/cpemonitor-tc'
+            target.write_bytes(candidates[0].read_bytes())
+            target.chmod(0o755)
+            os.utime(target, (EPOCH, EPOCH))
+            data = target.read_bytes()
+            if data[:4] != b'\x7fELF' or struct.unpack('<H', data[18:20])[0] != 183:
+                raise ValueError('Expected ARM64 tc executable')
+            dynamic = subprocess.check_output(['readelf', '-d', str(target)], text=True)
+            libraries = {'libc.so': 'libc', 'libc.musl-aarch64.so.1': 'libc', 'libmnl.so.0': 'libmnl0',
+                         'libbpf.so.1': 'libbpf1', 'libelf.so.1': 'libelf1', 'libz.so.1': 'zlib'}
+            for library in re.findall(r'Shared library: \[([^]]+)\]', dynamic):
+                if library not in libraries:
+                    raise ValueError('Unmapped tc library: ' + library)
+                if libraries[library] not in deps:
+                    deps.append(libraries[library])
         scripts = []
         for section, event in [('postinst', 'post-install'), ('postinst', 'post-upgrade'), ('prerm', 'pre-deinstall')]:
             match = re.search(r'define Package/' + re.escape(NAME) + '/' + section + r'\n(.*?)\nendef', make, re.S)
